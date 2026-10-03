@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 echo "== 1. Format (StyLua) =="
-stylua --check src tests
+stylua --check src tests tools
 
 echo "== 2. Rojo yığımı =="
 mkdir -p build

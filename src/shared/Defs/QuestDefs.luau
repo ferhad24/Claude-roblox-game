@@ -8,6 +8,9 @@ type SideTaskDef = Types.SideTaskDef
 type OrderDef = Types.OrderDef
 type AchievementDef = Types.AchievementDef
 
+-- Fəsil XP bonusları: sənəddə 100/180/250/350/450/650. Balans auditi (tools/balance_report.luau)
+-- bütün məcburi və əlavə işlərlə güc 15-ə 335 XP çatmadığını göstərdi; bölmə 15-in qaydasına görə
+-- ("çatmırsa məcburi bonus artırılır") fəsil 3–5 bonusları +100/+100/+150 artırılıb (docs/DESIGN_DECISIONS.md).
 local chapters: { ChapterDef } = {
 	{
 		chapter = 1,
@@ -143,7 +146,7 @@ local chapters: { ChapterDef } = {
 		chapter = 3,
 		zone = "Z03",
 		titleKey = "chapter.3",
-		reward = { coins = 350, xp = 250, badge = "BADGE_TREE_3" },
+		reward = { coins = 350, xp = 350, badge = "BADGE_TREE_3" },
 		steps = {
 			{
 				id = "Q3_PASSAGES",
@@ -195,7 +198,7 @@ local chapters: { ChapterDef } = {
 		chapter = 4,
 		zone = "Z04",
 		titleKey = "chapter.4",
-		reward = { coins = 450, xp = 350, badge = "BADGE_TREE_4" },
+		reward = { coins = 450, xp = 450, badge = "BADGE_TREE_4" },
 		steps = {
 			{
 				id = "Q4_LEVER",
@@ -248,7 +251,7 @@ local chapters: { ChapterDef } = {
 		chapter = 5,
 		zone = "Z05",
 		titleKey = "chapter.5",
-		reward = { coins = 550, xp = 450, badge = "BADGE_TREE_5" },
+		reward = { coins = 550, xp = 600, badge = "BADGE_TREE_5" },
 		steps = {
 			{
 				id = "Q5_BRUSH",
