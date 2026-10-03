@@ -1,6 +1,6 @@
 # Testlər və nəticələr
 
-Son yoxlama: `./scripts/check.sh` keçdi. Nəticə: 66 məntiq testi keçdi, 0 uğursuz; strict tip yoxlamasında 0 xəta;
+Son yoxlama: `./scripts/check.sh` keçdi. Nəticə: 82 məntiq testi keçdi, 0 uğursuz; strict tip yoxlamasında 0 xəta;
 2 DOM tüstü testi xətasız.
 
 ## Nə yoxlanır və nə yoxlanmır
@@ -78,9 +78,24 @@ security.spec      duplikasiya, iş doğrulaması, qurğu/su, pauza/oflayn, yanl
 save.spec          sessiya kilidi, köhnəlmiş kilid, yükləmə xətası, retry, v0 miqrasiyası, gələcək versiya, təmizləmə
 locales.spec       koddakı bütün mətn açarları AZ və EN-də var
 campaign.spec      tam kampaniya, güc 15 zəmanəti, finaldan sonrası, hər fəsildən sonra save/load
+mechanics.spec     çiləyici, şeh çiləyicisi, kompost, rəf, əkin qabının yığılması, sifarişlər, araba/yük,
+                   xatirə, nailiyyət, final kilidi, kilidli kök rezervuarı, sahə qapıları
+walkability.spec   1 stud-luq şəbəkədə gedişə yararlılıq (flood fill): bağlı sahələrə sızma yoxdur, hər fəslin
+                   obyektlərinə və bütün interaktiv obyektlərə çatmaq olur, hər sahənin təhlükəsiz spawn nöqtəsi əlçatandır
 tests/dom/world_smoke.luau   yığılmış yerdə dünya qurulması, bütün qurğu növləri, personaj görünüşü
 tests/dom/ui_smoke.luau      UI → real oyun nüvəsi: Başla, 11 panel, alış, iş, su, tikinti
 ```
+
+## Yoxlama zamanı tapılan real xətalar (düzəldilib)
+
+- **Z02 köhnə ayaqqabı dekoru körpünün yolunu bağlayırdı** → Z03-ə keçmək mümkün olmazdı (softlock).
+  `walkability.spec` tapdı; dekor körpünün yolundan çəkildi.
+- **Tək koordinatlı sabit portlar** təbii mənbədən 4 stud-luq kanalla əlçatan deyildi. Kataloq yoxlaması əlavə olundu, portlar cüt koordinata köçürüldü.
+- **Güc 15 sənəddəki rəqəmlərlə əldə olunmurdu** (335 XP çatmırdı). `campaign.spec` tapdı; bax: DESIGN_DECISIONS.
+- **Liftdən yuxarı dayanacaqdan aşağı enmək mümkün deyildi.** Yuxarıda əlaqə nöqtəsi əlavə olundu; indi `security.spec` yoxlayır.
+
+`walkability.spec` Roblox fizikasının dəqiq modeli deyil: pillə, tullanma, sürüşmə, personaj kapsulunun dəqiq forması yoxdur.
+Layout xətalarını tutur, amma Studio-da gəzinti testini əvəz etmir.
 
 ## Lune DOM testlərinin məhdudiyyətləri (tapılmış və test daxilində əvəzlənmiş)
 
