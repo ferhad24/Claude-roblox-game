@@ -224,6 +224,24 @@ return function(T)
 		end)
 	end)
 
+	T.describe("Lift", function()
+		T.it("lift həm aşağıdan, həm yuxarıdan işləyir; qurulmayıbsa işləmir", function()
+			local bot, p = richBot()
+			p.zones.Z04 = true
+			p.zones.Z05 = true
+			bot.game:setPosition(-100, 0, -46)
+			T.fails(bot:try("UseLift", { socket = "Z04_LiftSocket" }), "msg.locked")
+			p.builds["50"] = { t = "B_LIFT", socket = "Z04_LiftSocket", x = 0, z = 0, r = 0 }
+			local up = T.ok(bot:act("UseLift", { socket = "Z04_LiftSocket" }))
+			T.expect(up.data.pos[2]).toBe(24)
+			bot.game:setPosition(-100, 24, -39)
+			local down = T.ok(bot:act("UseLift", { socket = "Z04_LiftSocket" }))
+			T.expect(down.data.pos[2]).toBe(0)
+			bot.game:setPosition(0, 0, 80)
+			T.fails(bot:try("UseLift", { socket = "Z04_LiftSocket" }), "msg.tooFar")
+		end)
+	end)
+
 	T.describe("Yanlış sorğular", function()
 		T.it("NaN, sonsuz, hədsiz count və naməlum ID rədd olunur", function()
 			local bot, p = richBot()

@@ -688,6 +688,16 @@ local function applySockets(p: Profile)
 				CollectionService:AddTag(m, TAG_INTERACT)
 				m.Parent = buildsFolder
 				socketModels[obj.id] = m
+				-- Liftin yuxarı dayanacağı ayrıca əlaqə nöqtəsidir (hündürlük fərqi böyükdür)
+				local extra = obj.extra
+				local landing = extra and extra.landing
+				if obj.def == "B_LIFT" and landing then
+					local l = landing :: { number }
+					local top = Placeholders.model("LiftTop_" .. obj.id, CFrame.new(l[1], l[2], l[3]))
+					setAttributes(top, obj.id, "socketBuild", obj.def, obj.zone)
+					CollectionService:AddTag(top, TAG_INTERACT)
+					top.Parent = buildsFolder
+				end
 				local marker = objectModels[obj.id]
 				if marker then
 					fadeOut(marker, 0.5)
