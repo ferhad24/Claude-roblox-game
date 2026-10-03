@@ -455,4 +455,5 @@ return {
 	["outfit.3"] = "Terracotta",
 	["outfit.4"] = "Lavender",
 	["ui.craftedCard"] = "Crafted: {name} ×{n}",
+	["msg.harvestFirst"] = "Harvest the ripe crop first",
 }

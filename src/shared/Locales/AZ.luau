@@ -477,4 +477,5 @@ return {
 	["outfit.3"] = "Terrakota",
 	["outfit.4"] = "Lavanda",
 	["ui.craftedCard"] = "Hazırlandı: {name} ×{n}",
+	["msg.harvestFirst"] = "Əvvəl hazır məhsulu yığ",
 }

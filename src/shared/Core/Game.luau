@@ -1159,7 +1159,8 @@ function Game.storeBuild(self: Session, uid: string): Result
 		local plant = p.plants["B" .. uid]
 		if plant then
 			if plant.ready then
-				return fail("msg.notReady")
+				-- Hazır məhsulu əvvəl yığmaq lazımdır (bölmə 13)
+				return fail("msg.harvestFirst")
 			end
 			-- Bitkinin növü toxum kimi qaytarılır (layihə qərarı, docs/DESIGN_DECISIONS.md)
 			local pdef = PlantDefs.byId[plant.sp]

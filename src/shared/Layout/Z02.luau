@@ -111,12 +111,13 @@ local layout: Types.ZoneLayout = {
 	},
 	props = {
 		{
+			-- Köhnə ayaqqabı körpü çıxışından uzaqda (əvvəlki yeri körpü yolunu bağlayırdı: walkability.spec)
 			name = "OldShoe",
-			pos = { 116, 6, 20 },
-			size = { 10, 12, 25 },
+			pos = { 80, 6, 22 },
+			size = { 25, 12, 10 },
 			shape = "block",
 			color = { 90, 70, 60 },
-			rot = 15,
+			rot = 5,
 		},
 		{
 			name = "GrassBlade1",
