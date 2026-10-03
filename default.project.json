@@ -21,7 +21,8 @@
         "CharacterJumpHeight": 3.2,
         "DevCameraOcclusionMode": "Zoom",
         "AutoJumpEnabled": false,
-        "LoadCharacterAppearance": false
+        "LoadCharacterAppearance": false,
+        "EnableMouseLockOption": false
       },
       "StarterPlayerScripts": {
         "Client": {

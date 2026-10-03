@@ -63,6 +63,8 @@ Constants.RATE_LIMITS = {
 	trade = { count = 2, window = 1 },
 	place = { count = 4, window = 1 },
 	misc = { count = 8, window = 1 },
+	-- StopWork ayrıca qrupdadır: dayanma sorğusu heç vaxt iş başlatma limitinə görə rədd edilməməlidir
+	stop = { count = 10, window = 1 },
 }
 Constants.MAX_CRAFT_COUNT = 20
 Constants.RID_CACHE_SIZE = 64
@@ -70,7 +72,9 @@ Constants.RID_CACHE_SIZE = 64
 -- Yaddaş (bölmə 20)
 Constants.SCHEMA_VERSION = 1
 Constants.AUTOSAVE_SECONDS = 150
-Constants.SESSION_LOCK_SECONDS = 1800
+-- Kilid hər uğurlu save-də yenilənir (150 s). Server qəfil çöksə (kilid buraxılmasa), yeni server
+-- köhnə kilidi 4 save intervalından sonra götürür; köhnə server bundan sonra yaza bilmir (ProfileStore).
+Constants.SESSION_LOCK_SECONDS = Constants.AUTOSAVE_SECONDS * 4
 Constants.DATASTORE_NAME = "TinyGrove_Profiles_v1"
 
 -- UI

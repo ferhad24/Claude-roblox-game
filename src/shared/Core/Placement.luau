@@ -87,6 +87,22 @@ function Placement.footprintRect(def: BuildDef, center: { number }, r: number, v
 	return { x0 = center[1] - fx / 2, z0 = center[3] - fz / 2, x1 = center[1] + fx / 2, z1 = center[3] + fz / 2 }
 end
 
+-- Nöqtədən qurğunun footprint-inə üfüqi məsafə (server və client eyni funksiyanı işlədir)
+function Placement.distanceToBuild(b: PlacedBuild, x: number, y: number, z: number): number
+	local def = BuildDefs.byId[b.t]
+	local c = Placement.worldCenter(b)
+	if not def or not c then
+		return math.huge
+	end
+	if math.abs(y - c[2]) > 14 then
+		return math.huge
+	end
+	local rect = Placement.footprintRect(def, c, b.r, b.v)
+	local dx = math.max(0, rect.x0 - x, x - rect.x1)
+	local dz = math.max(0, rect.z0 - z, z - rect.z1)
+	return math.sqrt(dx * dx + dz * dz)
+end
+
 function Placement.worldPorts(b: PlacedBuild): { WorldPort }
 	local def = BuildDefs.byId[b.t]
 	local center = Placement.worldCenter(b)

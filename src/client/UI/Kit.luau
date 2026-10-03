@@ -40,6 +40,7 @@ local function prune()
 end
 
 local root: ScreenGui
+local uiScale: UIScale? = nil
 
 function Kit.init(playerGui: PlayerGui): ScreenGui
 	root = Instance.new("ScreenGui")
@@ -50,6 +51,7 @@ function Kit.init(playerGui: PlayerGui): ScreenGui
 	root.ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets
 	root.Parent = playerGui
 	local scale = Instance.new("UIScale")
+	uiScale = scale
 	scale.Name = "Scale"
 	scale.Parent = root
 	local function rescale()
@@ -68,6 +70,11 @@ function Kit.init(playerGui: PlayerGui): ScreenGui
 		Kit.refreshTexts()
 	end)
 	return root
+end
+
+-- Kökdəki UIScale dəyəri (ekran pikseli = offset × miqyas)
+function Kit.scale(): number
+	return if uiScale then uiScale.Scale else 1
 end
 
 function Kit.root(): ScreenGui

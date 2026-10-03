@@ -55,16 +55,23 @@ Hamısı konfiqurasiyadadır və asanlıqla dəyişdirilə bilər.
 | İş məsafəsi | obyektin mərkəzinə yox, footprint-in kənarına ölçülür (böyük daşlar və panellər üçün) | `Game.distanceToObject` |
 | Əlcək/ling ilə yüngül daş | əlcək 1 iş/s (2-ci səviyyə 1.8), ling 2.2 | `ToolDefs` |
 | Bitki çıxarılması | dolu əkin qabı yığılanda bitkinin növü toxum kimi qaytarılır | `Game.storeBuild` |
-| Lift | prototipdə qısa keçid (teleport) kimi işləyir: aşağı və yuxarı dayanacaqda əlaqə | `Game` UseLift |
+| Lift | prototipdə qısa keçid (teleport) kimi işləyir: aşağı və yuxarı dayanacaqda (Z05 masası, Z=−34) əlaqə | `Game` UseLift |
 | Rahat keçid | yalnız finaldan sonra, yalnız açılmış sahələrə | `Game` FastTravel |
 | Sifariş təklifləri | deterministik təsadüf (profil toxumu); bitən iş dərhal geri gəlmir; dəyişmək pulsuzdur | `Game` |
 | Sürət limitləri | iş 4/s, alış/craft 2/s, yerləşdirmə 4/s, digər 8/s | `Constants` |
 | Avtomatik save | 150 s; fəsil sonu, final və alışdan sonra tez save növbəsi | `SessionService` |
-| Sessiya kilidi | 30 dəqiqə; köhnəlmiş kilid götürülür, köhnə sessiya artıq yaza bilmir | `ProfileStore` |
+| Sessiya kilidi | Hər save-də yenilənir. Server çöksə, 600 s (4 avtomatik save intervalı) sonra köhnəlmiş sayılır və götürülür; köhnə sessiya artıq yaza bilmir. Save-lər ardıcıldır; `BindToClose` gedən yazıları 25 s-ə qədər gözləyir | `ProfileStore`, `SessionService` |
 | Pauza | yalnız Pauza ekranı və Esc menyusu pauza edir; digər panellər oyunu dayandırmır | `Panels`, `init.client` |
 | Başlanğıc | profil yüklənəndə oyun pauzadadır; "Başla/Davam et" basanda vaxt işləyir | `SessionService` |
 | Personaj | Roblox standart personajı (`LoadCharacterAppearance=false`), rəngləri ayarlarda seçilir; yarpaq papaq, yaylıq, əlcəklər primitivdir | `CharacterLook` |
 | Gamepad | X əlaqə (A Roblox-da tullanmadır); A təsdiq, B geri | `Interaction`, `Build` |
+| Reset (Esc menyusu) | söndürülmür: 2 s sonra son təhlükəsiz nöqtədə yenidən yaranma (ilişən oyunçu üçün də çıxış yoludur) | `SessionService` |
+| Shift Lock | söndürülüb (`EnableMouseLockOption=false`), çünki Shift qaçışdır | `default.project.json` |
+| DataStore əlçatan deyil | yaddaşdaxili test rejimi yalnız Studio-da; canlı serverdə yükləmə xətası və "yenidən cəhd" | `PlayerDataService` |
+| İş/əlaqə məsafəsi | client ipucu və server yoxlaması eyni funksiya ilə; client 0.5 stud ehtiyatla göstərir (server mövqeyi gecikir) | `Layout.distanceTo`, `Interaction` |
+| Basılı iş düyməsi | bir sorğu gözlənilir; server rədd edərsə düymə buraxılana və ya hədəf dəyişənə qədər təkrar yoxdur ("uzaqdır" istisna: 0.4 s sonra səssiz təkrar) | `Interaction` |
+| Toxunuşlu cihazda düzən | iş/əlaqə sütunu tullanma düyməsinin üstündə; hotbar yığcam; menyu solda | `Interaction`, `Hud` |
+| Ev anbarındakı su | anbarda "Anbara boşalt" və "Doldur" seçimi (çən yığılanda su bura keçir) | `Interaction` |
 | Azərbaycan dilində sıra şəkilçisi | "{n}-ci fəsil" əvəzinə "fəsil {n}" (3-cü, 4-cü, 6-cı fərqi səhv çıxmasın) | `Locales/AZ` |
 
 ## C. Sənəddə olmayan, layihəyə əlavə edilənlər

@@ -1,7 +1,7 @@
 --!strict
 -- Profilin yüklənməsi və saxlanılması (bölmə 20, M2).
--- Canlı DataStore əlçatan deyilsə (Studio-da API girişi bağlı, yayımlanmamış yer) yaddaşdaxili
--- TEST adapteri işə düşür və oyunçuya "test rejimi — yaddaş saxlanmır" göstərilir.
+-- Yalnız Studio-da, DataStore əlçatan deyilsə (API girişi bağlı, yayımlanmamış yer) yaddaşdaxili
+-- TEST adapteri işə düşür və oyunçuya "test rejimi — yaddaş saxlanmır" göstərilir. Canlı serverdə heç vaxt.
 -- Test adapteri canlı DataStore sayılmır (bölmə 24, M2).
 local DataStoreService = game:GetService("DataStoreService")
 local HttpService = game:GetService("HttpService")
@@ -19,30 +19,35 @@ local store: ProfileStore.Store
 local testMode = false
 local jobId = if game.JobId ~= "" then game.JobId else ("studio-" .. HttpService:GenerateGUID(false))
 
+local function dataStoreAdapter(): ProfileStore.Adapter
+	local ds: DataStore? = nil
+	return {
+		UpdateAsync = function(_self: any, key: string, fn: (any) -> any): any
+			if not ds then
+				ds = DataStoreService:GetDataStore(Constants.DATASTORE_NAME)
+			end
+			return (ds :: DataStore):UpdateAsync(key, function(old: any): any
+				return fn(old)
+			end)
+		end,
+		isTest = false,
+	}
+end
+
 local function makeAdapter(): ProfileStore.Adapter
-	local ok, dsOrErr = pcall(function()
-		return DataStoreService:GetDataStore(Constants.DATASTORE_NAME)
-	end)
-	if ok then
-		local ds = dsOrErr :: DataStore
-		-- Studio-da API girişi bağlı olanda ilk sorğu xəta verir: bunu əvvəlcədən yoxlayırıq
-		local probeOk, probeErr = pcall(function()
-			ds:GetAsync("__probe")
-		end)
-		if probeOk then
-			return {
-				UpdateAsync = function(_self: any, key: string, fn: (any) -> any): any
-					return ds:UpdateAsync(key, function(old: any): any
-						return fn(old)
-					end)
-				end,
-				isTest = false,
-			}
-		end
-		warn("[TinyGrove] DataStore əlçatan deyil, test adapteri istifadə olunur: " .. tostring(probeErr))
-	else
-		warn("[TinyGrove] DataStore açılmadı, test adapteri istifadə olunur: " .. tostring(dsOrErr))
+	-- Canlı serverdə heç vaxt yaddaşdaxili adapterə keçmirik: müvəqqəti DataStore xətası
+	-- yükləmə xətası kimi göstərilir (yenidən cəhd ekranı), oyunçu təzə profillə başlamır.
+	if not RunService:IsStudio() then
+		return dataStoreAdapter()
 	end
+	-- Studio-da API girişi bağlı olanda (və ya yer yayımlanmayıbsa) ilk sorğu xəta verir
+	local probeOk, probeErr = pcall(function()
+		DataStoreService:GetDataStore(Constants.DATASTORE_NAME):GetAsync("__probe")
+	end)
+	if probeOk then
+		return dataStoreAdapter()
+	end
+	warn("[TinyGrove] Studio: DataStore əlçatan deyil, test adapteri istifadə olunur: " .. tostring(probeErr))
 	testMode = true
 	return ProfileStore.memoryAdapter(Profile.clone)
 end

@@ -16,6 +16,7 @@ local WorkDefs = require(Shared.Defs.WorkDefs)
 local BuildDefs = require(Shared.Defs.BuildDefs)
 local PlantDefs = require(Shared.Defs.PlantDefs)
 local NpcDefs = require(Shared.Defs.NpcDefs)
+local Placement = require(Shared.Core.Placement)
 local Net = require(script.Parent.Parent.Net)
 local Lang = require(script.Parent.Parent.Lang)
 local Kit = require(script.Parent.Parent.UI.Kit)
@@ -42,6 +43,15 @@ local actButton: TextButton
 local menu: Frame
 local workingTarget: string? = nil
 local workHeld = false
+-- Başlatma sorğusu cavabı gələnə qədər yenisi göndərilmir (snapshot bir dövrə gecikir)
+local startPending = false
+local startedAt = 0
+-- Server rədd edibsə, düymə buraxılana və ya hədəf dəyişənə qədər avtomatik təkrar yoxdur
+local refusedTarget: string? = nil
+local retryAt = 0
+local pickAcc = math.huge
+local pickedModel: Model? = nil
+local workTouch: InputObject? = nil
 local enabled = false
 local gui: ScreenGui
 
@@ -249,42 +259,68 @@ local function modelPosition(m: Model): Vector3
 	return m:GetPivot().Position
 end
 
--- Hədəf seçimi: məsafə (obyektin ölçüsü nəzərə alınaraq) və baxış istiqaməti
-local function pickTarget(): Model?
+-- Server əlaqə məsafəsini oyunçunun serverdəki (bir az gecikən) mövqeyindən yoxlayır: kiçik ehtiyat
+local RANGE_MARGIN = 0.5
+
+-- Modelə server ilə eyni footprint məsafəsi (Layout.distanceTo / Placement.distanceToBuild)
+local function distanceTo(m: Model, s: { [string]: any }, pos: Vector3): number
+	local id = m:GetAttribute("TG_Id") :: string?
+	local kind = m:GetAttribute("TG_Kind") :: string?
+	if not id then
+		return math.huge
+	end
+	if kind == "build" then
+		local b = s.builds and s.builds[id]
+		if not b then
+			return math.huge
+		end
+		return Placement.distanceToBuild(b, pos.X, pos.Y, pos.Z)
+	elseif kind == "socketBuild" then
+		-- Lift: server mərkəzə 12 stud yoxlayır; burada əlaqə məsafəsi kifayətdir
+		local mp = modelPosition(m)
+		if math.abs(mp.Y - pos.Y) > 8 then
+			return math.huge
+		end
+		return Vector3.new(mp.X - pos.X, 0, mp.Z - pos.Z).Magnitude
+	end
+	local obj = Layout.byId[id]
+	if not obj then
+		return math.huge
+	end
+	return Layout.distanceTo(obj, pos.X, pos.Y, pos.Z)
+end
+
+-- Hədəf seçimi: əvvəl ucuz məsafə süzgəci, sonra bal sırası ilə ilk göstərişi olan obyekt.
+-- Göstərişi olmayan (lampa, körpü) və iş məsafəsindən kənar iş obyektləri hədəfi "oğurlamır".
+local function pickTarget(s: { [string]: any }): (Model?, Hint?, number)
 	local hrp = rootPart()
-	local s = state()
-	if not hrp or not s then
-		return nil
+	if not hrp then
+		return nil, nil, math.huge
 	end
 	local pos = hrp.Position
 	local look = hrp.CFrame.LookVector
-	local best: Model? = nil
-	local bestScore = math.huge
+	local candidates: { { m: Model, dist: number, score: number } } = {}
 	for _, inst in CollectionService:GetTagged("TG_Interact") do
 		if inst:IsA("Model") and inst.Parent then
-			local mp = modelPosition(inst)
-			local id = inst:GetAttribute("TG_Id") :: string?
-			local obj = id and Layout.byId[id]
-			local radius = 2
-			if obj then
-				local size = Layout.sizeOf(obj)
-				radius = math.max(size[1], size[3]) / 2
-			elseif inst:GetAttribute("TG_Kind") == "build" then
-				radius = 2
-			end
-			local delta = Vector3.new(mp.X - pos.X, 0, mp.Z - pos.Z)
-			local dist = math.max(0, delta.Magnitude - radius)
-			if dist <= Constants.INTERACT_RANGE - 1 and math.abs(mp.Y - pos.Y) < 14 then
+			local dist = distanceTo(inst, s, pos)
+			if dist <= Constants.INTERACT_RANGE - RANGE_MARGIN then
+				local mp = modelPosition(inst)
+				local delta = Vector3.new(mp.X - pos.X, 0, mp.Z - pos.Z)
 				local facing = if delta.Magnitude > 0.01 then delta.Unit:Dot(look) else 1
-				local score = dist - facing * 2
-				if score < bestScore then
-					bestScore = score
-					best = inst
-				end
+				table.insert(candidates, { m = inst, dist = dist, score = dist - facing * 2 })
 			end
 		end
 	end
-	return best
+	table.sort(candidates, function(a, b)
+		return a.score < b.score
+	end)
+	for _, c in candidates do
+		local h = describe(c.m, s)
+		if h and not (h.work and c.dist > Constants.WORK_RANGE - RANGE_MARGIN) then
+			return c.m, h, c.dist
+		end
+	end
+	return nil, nil, math.huge
 end
 
 local function setBillboard(m: Model?, h: Hint?)
@@ -481,6 +517,7 @@ local function interact()
 	end
 	local id = m:GetAttribute("TG_Id") :: string
 	local a = h.action
+	local s: { [string]: any } = state() or {}
 	if a == "pour" then
 		Net.request("WaterPlant", { target = id })
 	elseif a == "fill" then
@@ -489,6 +526,22 @@ local function interact()
 		seedMenu(id)
 	elseif a == "harvest" then
 		Net.request("Harvest", { slot = id })
+	elseif a == "storage" and (s.homeWater or 0) > 0 and (s.cup or 0) < (s.cupCapacity or 0) then
+		-- Ev anbarında yığılmış su var (çən yığılanda bura keçir): boşaltmaq və ya qabı doldurmaq
+		openMenu({
+			{
+				key = "ui.deposit",
+				fn = function()
+					Net.request("Interact", { target = id })
+				end,
+			},
+			{
+				key = "ui.fill",
+				fn = function()
+					Net.request("FillWater", { source = id })
+				end,
+			},
+		})
 	elseif
 		a == "talk"
 		or a == "workbench"
@@ -515,22 +568,58 @@ local function interact()
 end
 Interaction.interact = interact
 
+local function requestStart(id: string)
+	startPending = true
+	startedAt = os.clock()
+	workingTarget = id
+	Net.request("StartWork", { target = id }, function(result: any)
+		startPending = false
+		if type(result) == "table" and result.ok then
+			return
+		end
+		if workingTarget == id then
+			workingTarget = nil
+		end
+		local err = type(result) == "table" and result.err or nil
+		if err == "msg.tooFar" then
+			-- Server mövqeyi bir az gecikir: susaraq qısa fasilədən sonra yenidən yoxla
+			retryAt = os.clock() + 0.4
+		else
+			refusedTarget = id
+			Net.Result:Fire("StartWork", result)
+		end
+	end, true)
+end
+
+local function tryStart()
+	if startPending or workingTarget or os.clock() < retryAt then
+		return
+	end
+	local m = target
+	local h = targetHint
+	if m and h and h.work and h.state == "can" then
+		local id = m:GetAttribute("TG_Id") :: string
+		if id ~= refusedTarget then
+			requestStart(id)
+		end
+	end
+end
+
 local function startWork()
 	if not enabled or (Interaction.isBlocked and Interaction.isBlocked()) then
 		return
 	end
 	workHeld = true
-	local m = target
-	local h = targetHint
-	if m and h and h.work and h.state == "can" then
-		local id = m:GetAttribute("TG_Id") :: string
-		workingTarget = id
-		Net.request("StartWork", { target = id })
-	end
+	-- Yeni basış: əvvəlki imtina unudulur (oyunçu şərti düzəltmiş ola bilər)
+	refusedTarget = nil
+	retryAt = 0
+	tryStart()
 end
 
 local function stopWork()
 	workHeld = false
+	workTouch = nil
+	refusedTarget = nil
 	if workingTarget then
 		workingTarget = nil
 		Net.request("StopWork", {})
@@ -544,11 +633,15 @@ function Interaction.setEnabled(on: boolean)
 		stopWork()
 		closeMenu()
 		setBillboard(nil, nil)
+		target = nil
+		targetHint = nil
 	end
 	updateMobile(if on then targetHint else nil)
 end
 
-function Interaction.update()
+local PICK_INTERVAL = 0.1
+
+function Interaction.update(dt: number?)
 	if not enabled then
 		return
 	end
@@ -560,18 +653,29 @@ function Interaction.update()
 	if workingTarget and s.work and s.work.id == workingTarget then
 		return
 	end
-	if workingTarget and not s.work then
+	-- Server işi dayandırıbsa (snapshot-da iş yoxdur) — başlatma cavabını və ilk snapshot-u gözlədikdən sonra
+	if workingTarget and not s.work and not startPending and os.clock() - startedAt > 1 then
 		workingTarget = nil
 	end
-	local m = pickTarget()
-	local h = if m then describe(m, s) else nil
-	target = if h then m else nil
+	-- Hədəf seçimi hər kadrda yox, ~10 dəfə/s (mobil performans)
+	pickAcc += dt or PICK_INTERVAL
+	if pickAcc < PICK_INTERVAL and not (pickedModel and not pickedModel.Parent) then
+		return
+	end
+	pickAcc = 0
+	local m, h = pickTarget(s)
+	pickedModel = m
+	local id = m and m:GetAttribute("TG_Id") :: string?
+	if refusedTarget and id ~= refusedTarget then
+		refusedTarget = nil
+	end
+	target = m
 	targetHint = h
 	setBillboard(target, h)
 	updateMobile(h)
 	-- Düymə hələ basılıdırsa yeni işlənə bilən hədəfə keç
-	if workHeld and not workingTarget and h and h.work and h.state == "can" then
-		startWork()
+	if workHeld then
+		tryStart()
 	end
 end
 
@@ -621,6 +725,9 @@ function Interaction.init(rootGui: ScreenGui)
 			input.UserInputType == Enum.UserInputType.Touch
 			or input.UserInputType == Enum.UserInputType.MouseButton1
 		then
+			if input.UserInputType == Enum.UserInputType.Touch then
+				workTouch = input
+			end
 			startWork()
 		end
 	end)
@@ -633,6 +740,37 @@ function Interaction.init(rootGui: ScreenGui)
 		end
 	end)
 	mobileBar.Visible = false
+	-- Roblox-un standart toxunma tullanma düyməsi (TouchJump): ekranın kiçik tərəfi ≤500 px olanda 70 px,
+	-- əks halda 120 px; sağ kənarı ekranın sağından 0.5·ölçü−10 px, yuxarısı aşağıdan ölçü+20 (kiçik)
+	-- və ya 1.75·ölçü (böyük). İş/əlaqə sütunu onun düz üstünə, sağ kənarları bərabər qoyulur.
+	-- Cihazda yoxlanmayıb (docs/OPEN_ISSUES.md).
+	local function layoutMobile()
+		local cam = workspace.CurrentCamera
+		if not cam then
+			return
+		end
+		local vs = cam.ViewportSize
+		local small = math.min(vs.X, vs.Y) <= 500
+		local jump = if small then 70 else 120
+		local jumpTop = if small then jump + 20 else jump * 1.75
+		local inset = jump * 0.5 - 10
+		local workSize = if small then 80 else 110
+		local actW, actH = if small then 120 else 150, if small then 48 else 56
+		-- Bizim UI UIScale ilə böyüyür, tullanma düyməsi isə yox: mövqe ekran pikselinə çevrilir
+		local k = Kit.scale()
+		mobileBar.Size = UDim2.fromOffset(actW, 0)
+		mobileBar.Position = UDim2.new(1, -inset / k, 1, -(jumpTop + 8) / k)
+		workButton.Size = UDim2.fromOffset(workSize, workSize)
+		actButton.Size = UDim2.fromOffset(actW, actH)
+	end
+	layoutMobile()
+	local cam = workspace.CurrentCamera
+	if cam then
+		cam:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+			-- Kit-in UIScale yenilənməsindən sonra
+			task.defer(layoutMobile)
+		end)
+	end
 
 	menu = Kit.frame(gui, {
 		name = "ContextMenu",
@@ -660,6 +798,10 @@ function Interaction.init(rootGui: ScreenGui)
 	end)
 	UserInputService.InputEnded:Connect(function(input: InputObject)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.KeyCode == Enum.KeyCode.ButtonR2 then
+			stopWork()
+		elseif workTouch and input == workTouch then
+			-- İş düyməsi basılı ikən gizlənsə də (hədəf dəyişdi) barmağın qalxması burada tutulur
+			workTouch = nil
 			stopWork()
 		end
 	end)

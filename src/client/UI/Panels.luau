@@ -897,12 +897,72 @@ local TITLES = {
 	pause = "ui.pause",
 }
 
+-- Panellərin göstərmədiyi, tez dəyişən snapshot sahələri. Yalnız bunlar dəyişibsə açıq panel yenidən
+-- qurulmur: su xətti işləyəndə snapshot ~1 dəfə/s gəlir və hər dəfə qurmaq toxunuş zamanı düyməni silərdi.
+local VOLATILE = {
+	playSeconds = true,
+	dayTime = true,
+	raining = true,
+	builds = true,
+	plants = true,
+	moisture = true,
+	waterSources = true,
+	workProgress = true,
+	work = true,
+	respawn = true,
+	restored = true,
+	interacted = true,
+}
+
+local function encode(v: any, out: { string })
+	if type(v) == "table" then
+		local keys = {}
+		for k in v do
+			table.insert(keys, k)
+		end
+		table.sort(keys, function(a, b)
+			return tostring(a) < tostring(b)
+		end)
+		table.insert(out, "{")
+		for _, k in keys do
+			table.insert(out, tostring(k))
+			table.insert(out, "=")
+			encode(v[k], out)
+			table.insert(out, ",")
+		end
+		table.insert(out, "}")
+	else
+		table.insert(out, tostring(v))
+	end
+end
+
+local function signature(s: { [string]: any }): string
+	local out = {}
+	local keys = {}
+	for k in s do
+		if not VOLATILE[k] then
+			table.insert(keys, k)
+		end
+	end
+	table.sort(keys)
+	for _, k in keys do
+		table.insert(out, k)
+		table.insert(out, ":")
+		encode(s[k], out)
+		table.insert(out, ";")
+	end
+	return table.concat(out)
+end
+
+local lastSignature: string? = nil
+
 local function renderCurrent()
 	local name = current
 	local s = Net.state
 	if not name or not s then
 		return
 	end
+	lastSignature = signature(s)
 	local scroll = body.CanvasPosition
 	Kit.clear(body)
 	Kit.clear(tabsBar)
@@ -1028,7 +1088,8 @@ function Panels.init(gui: ScreenGui)
 	Kit.list(body, false, 6)
 	window.Visible = false
 	Net.StateChanged:Connect(function()
-		if current then
+		local s = Net.state
+		if current and s and signature(s) ~= lastSignature then
 			renderCurrent()
 		end
 	end)

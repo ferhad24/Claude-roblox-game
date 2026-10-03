@@ -131,6 +131,19 @@ local function worldPorts(obj: LayoutObject): { { x: number, y: number, z: numbe
 	return out
 end
 
+-- Nöqtədən obyektin footprint-inə üfüqi məsafə (fırlanma nəzərə alınır). Server iş/əlaqə
+-- məsafəsini bununla yoxlayır; client ipuclarını eyni funksiya ilə göstərir ki, uyğunsuzluq olmasın.
+local function distanceTo(obj: LayoutObject, x: number, y: number, z: number): number
+	if math.abs(y - obj.pos[2]) > 14 then
+		return math.huge
+	end
+	local size = sizeOf(obj)
+	local r = rectAround(obj.pos[1], obj.pos[3], size[1], size[3], obj.rot)
+	local dx = math.max(0, r.x0 - x, x - r.x1)
+	local dz = math.max(0, r.z0 - z, z - r.z1)
+	return math.sqrt(dx * dx + dz * dz)
+end
+
 return {
 	zones = zones,
 	zoneLayout = zoneLayout,
@@ -144,4 +157,5 @@ return {
 	sizeOf = sizeOf,
 	rectAround = rectAround,
 	worldPorts = worldPorts,
+	distanceTo = distanceTo,
 }

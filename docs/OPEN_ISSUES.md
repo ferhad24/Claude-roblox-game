@@ -27,13 +27,26 @@
 - Final 3D modellər, animasiyalar (13 klip), ikonlar, musiqi və səs effektləri. Səs ayarları saxlanılır, amma səs yoxdur.
 - Thumbnail və oyun cover-i.
 - Performans ölçümü. Hard limitlər kodda var: 120 qurğu, 12 əkin qabı, 60 kanal, 20 dekorativ böcək.
+  Client yükü azaldılıb (hədəf seçimi 10 dəfə/s, panel yalnız məlumat dəyişəndə qurulur, tikinti rejimində su qrafı
+  snapshot başına bir dəfə), amma FPS ölçülməyib.
 - Instance streaming açılmayıb (`StreamingEnabled=false`). Controller-lər tag siqnallarına əsaslanır, amma streaming test edilməyib.
 
 ## Studio-da yoxlanmalı riskli yerlər
 
+Kod yoxlamasında tapılıb düzəldilən, amma Roblox-da işlədilməyən dəyişikliklər (siyahı: TESTING.md):
+
+- **Save çıxışda:** `BindToClose` gedən yazıları 25 s-ə qədər gözləyir, save-lər ardıcıldır, kilid 600 s-dən sonra köhnəlir.
+  Canlı DataStore ilə (Studio-da API girişi açıq) oyundan çıxıb dərhal yenidən girmək yoxlanmalıdır.
+- **Reset:** Esc → Reset-dən 2 s sonra personaj son təhlükəsiz nöqtədə yaranmalıdır.
+- **Mobil düzən:** iş/əlaqə düymələri Roblox-un standart tullanma düyməsinin düz üstünə qoyulur. Onun yeri ekran ölçüsündən
+  hesablanır (kiçik ekranda 70 px, böyükdə 120 px — Roblox-un TouchJump modulunun bildiyim düsturu ilə). Toxunuşda
+  hotbar yığcamdır, menyu solda statistikanın altındadır. Dar telefonlarda menyu zolağı ilə sağ sütun yenə toqquşa bilər.
+  **Cihazda yoxlanmayıb.**
+- **Təhlükəsiz nöqtə:** server aşağıya raycast edir (`RespectCanCollide`). Suya düşəndə geri qaytarma yoxlanmalıdır.
+
 - Divarlar, qapılar, maneələrin görünməz bariyerləri: oyunçunun ilişib qala biləcəyi yer olub-olmadığı.
 - Kamera: `Zoom` okklüziyası, otların lokal şəffaflaşması, ilkin 12 stud məsafə.
-- Lift prototipdə teleport kimi işləyir (fiziki platforma deyil).
+- Lift prototipdə teleport kimi işləyir (fiziki platforma deyil). Yuxarı dayanacaq Z05 masasının üstündədir (Z=−34).
 - Mobil UI: HUD elementlərinin kiçik ekranlarda üst-üstə düşməsi, 48 px toxunma hədəfləri, təhlükəsiz sahə.
 - Gamepad düymə xəritəsi.
 - Gün-gecə işıqlandırması və yağış effekti (sadə ParticleEmitter).

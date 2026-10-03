@@ -34,7 +34,7 @@ Kod hazır modelləri adına görə axtarır. Tapılmasa placeholder qurur:
 - **Sabit dünya obyektləri:** `ServerStorage/WorldTemplates/<ID>`. ID olaraq layout obyekt ID-si (məs. `Z01_DewBowl`)
   və ya tərif ID-si (məs. `W_LEAF`, `BED_DRY`, `NPC_PITIR`) istifadə olunur. Model `PivotTo` ilə obyektin yerinə qoyulur.
   Pivot yer səviyyəsində, obyektin mərkəzində olmalıdır.
-- **Körpü və lift:** `ServerStorage/WorldTemplates/B_BRIDGE`, `B_LIFT`.
+- **Körpü və lift:** `ServerStorage/WorldTemplates/B_BRIDGE`, `B_LIFT`. Körpü Z oxu boyunca (20 stud, en 6), pivot mərkəzdə; lift pivotu aşağı platformanın mərkəzində.
 - **Oyunçu qurğuları:** `ReplicatedStorage/Assets/Builds/<BuildDef ID>` (məs. `B_WHEEL`). Model `+X` istiqamətinə axın üçün
   qurulmalıdır (rot=0), pivot mərkəzdə. Çarxın fırlanan hissəsinin adı `Wheel`, sudakı hissənin adı `Water` olmalıdır (effektlər bunlara baxır).
 - Hər asset üçün pivot, collision, vizual ölçü, LOD ehtiyacı, ID və mənbə qeyd olunmalıdır (bölmə 19). Sırf dekor otlarında collision olmamalıdır.

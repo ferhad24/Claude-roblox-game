@@ -33,10 +33,20 @@ function Placeholders.part(props: PartProps): Part
 	local p = Instance.new("Part")
 	p.Name = props.name or "Part"
 	p.Anchored = true
-	p.Size = props.size
+	local shape = props.shape or Enum.PartType.Block
+	local size = props.size
+	if shape == Enum.PartType.Ball and not (size.X == size.Y and size.Y == size.Z) then
+		-- Roblox Ball hissəsini bərabər ölçüyə məcbur edir: ellipsoid üçün blok + sfera mesh (toqquşma qutudur)
+		p.Shape = Enum.PartType.Block
+		local mesh = Instance.new("SpecialMesh")
+		mesh.MeshType = Enum.MeshType.Sphere
+		mesh.Parent = p
+	else
+		p.Shape = shape
+	end
+	p.Size = size
 	p.CFrame = props.cframe
 	p.Color = props.color
-	p.Shape = props.shape or Enum.PartType.Block
 	p.Material = props.material or Enum.Material.SmoothPlastic
 	p.Transparency = props.transparency or 0
 	p.CanCollide = if props.collide == nil then true else props.collide

@@ -46,13 +46,18 @@ local function clockFor(t: number): number
 	return (21 + 9 * f) % 24
 end
 
+local lastNight: boolean? = nil
+
 local function applyLighting()
 	local clock = clockFor(localDay)
 	Lighting.ClockTime = clock
 	local night = clock >= 19.5 or clock < 5.5
-	-- Gecə qara ekran yoxdur: ətraf işıq aşağı düşür, amma yollar görünür
-	Lighting.Ambient = if night then Color3.fromRGB(70, 80, 100) else Color3.fromRGB(115, 115, 107)
-	Lighting.OutdoorAmbient = if night then Color3.fromRGB(85, 95, 120) else Color3.fromRGB(140, 140, 128)
+	-- Gecə qara ekran yoxdur: ətraf işıq aşağı düşür, amma yollar görünür. Yalnız dəyişəndə yazılır.
+	if night ~= lastNight then
+		lastNight = night
+		Lighting.Ambient = if night then Color3.fromRGB(70, 80, 100) else Color3.fromRGB(115, 115, 107)
+		Lighting.OutdoorAmbient = if night then Color3.fromRGB(85, 95, 120) else Color3.fromRGB(140, 140, 128)
+	end
 end
 
 local function setRain(on: boolean)
@@ -154,7 +159,10 @@ function Effects.update(dt: number)
 			local flowing = flowT ~= nil and now - (flowT :: number) < 1.5
 			local water = m:FindFirstChild("Water") :: BasePart?
 			if water then
-				water.Transparency = if flowing then 0.25 else 0.75
+				local tr = if flowing then 0.25 else 0.75
+				if water.Transparency ~= tr then
+					water.Transparency = tr
+				end
 			end
 			local wheel = m:FindFirstChild("Wheel") :: BasePart?
 			if wheel and flowing then

@@ -626,8 +626,13 @@ local function socketBuild(obj: LayoutObject): Model
 		local span = extra.span :: { number }
 		local from = Vector3.new(obj.pos[1] + span[1], obj.pos[2] + span[2], obj.pos[3] + span[3])
 		local to = Vector3.new(obj.pos[1] + span[4], obj.pos[2] + span[5], obj.pos[3] + span[6])
-		return template("WorldTemplates", "B_BRIDGE")
-			or Placeholders.bridge(from, to, extra.width or 6, "Bridge_" .. obj.id)
+		local bridge = template("WorldTemplates", "B_BRIDGE")
+		if bridge then
+			-- Hazır model Z oxu boyunca, pivot mərkəzdə qurulmalıdır (docs/ASSETS.md)
+			bridge:PivotTo(CFrame.new((from + to) / 2))
+			return bridge
+		end
+		return Placeholders.bridge(from, to, extra.width or 6, "Bridge_" .. obj.id)
 	end
 	-- Lift: şaxta, aşağı və yuxarı platforma
 	local m = template("WorldTemplates", "B_LIFT")
@@ -663,9 +668,10 @@ local function socketBuild(obj: LayoutObject): Model
 		end
 	end
 	Placeholders.part({
+		-- Divarın üzündən (Z=−39) masanın üstünə qədər; divarın görünməz qapağına girmir
 		name = "TopDeck",
-		size = Vector3.new(8, 0.6, 14),
-		cframe = CFrame.new(landing[1], landing[2] - 0.3, landing[3] - 0),
+		size = Vector3.new(8, 0.6, 6),
+		cframe = CFrame.new(landing[1], landing[2] - 0.3, landing[3] - 2),
 		color = Color3.fromRGB(170, 125, 85),
 		material = Enum.Material.Wood,
 		parent = lift,

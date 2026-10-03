@@ -81,6 +81,30 @@ return function(T)
 			T.expect(p.workProgress["Z01_Leaf_01"] > 0).toBeTruthy()
 		end)
 
+		T.it("məsafə fırlanmış footprint-ə ölçülür (server və client eyni funksiyanı işlədir)", function()
+			local obj = { id = "X", kind = "work", pos = { 0, 0, 0 }, rot = 90, extra = { size = { 10, 1, 2 } } }
+			-- 90° fırlanmada 10×2 footprint Z boyunca uzanır
+			T.expect(Layout.distanceTo(obj, 0, 3, 4)).toBe(0)
+			T.expect(Layout.distanceTo(obj, 4, 3, 0)).toBe(3)
+			obj.rot = 0
+			T.expect(Layout.distanceTo(obj, 0, 3, 4)).toBe(3)
+			T.expect(Layout.distanceTo(obj, 4, 3, 0)).toBe(0)
+			-- Hündürlük fərqi böyükdürsə (masa üstü) əlçatan deyil
+			T.expect(Layout.distanceTo(obj, 0, 20, 0)).toBe(math.huge)
+		end)
+
+		T.it("StopWork iş başlatma limitinə düşmür (basılı düymə spamından sonra da dayanır)", function()
+			local bot = richBot()
+			bot:goTo("Z01_Leaf_01")
+			local t = 500
+			for _ = 1, 6 do
+				bot.game:handle("StartWork", { target = "Z01_Leaf_01" }, t)
+			end
+			T.fails(bot.game:handle("StartWork", { target = "Z01_Leaf_01" }, t), "msg.rateLimited")
+			T.ok(bot.game:handle("StopWork", {}, t))
+			T.expect(bot.game.work).toBe(nil)
+		end)
+
 		T.it("iş yarıda dayanıb davam edəndə irəliləyiş və mükafat doğru qalır", function()
 			local bot, p = richBot()
 			p.workXP = 0
@@ -234,7 +258,7 @@ return function(T)
 			p.builds["50"] = { t = "B_LIFT", socket = "Z04_LiftSocket", x = 0, z = 0, r = 0 }
 			local up = T.ok(bot:act("UseLift", { socket = "Z04_LiftSocket" }))
 			T.expect(up.data.pos[2]).toBe(24)
-			bot.game:setPosition(-100, 24, -39)
+			bot.game:setPosition(-100, 24, -34)
 			local down = T.ok(bot:act("UseLift", { socket = "Z04_LiftSocket" }))
 			T.expect(down.data.pos[2]).toBe(0)
 			bot.game:setPosition(0, 0, 80)

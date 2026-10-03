@@ -47,6 +47,15 @@ local loadingPlayer: Player? = nil
 local TICK = 0.1
 local SNAPSHOT_INTERVAL = 0.25
 local CRITICAL_SAVE_DELAY = 8
+-- Buraxılış save-i gedən save-i ən çox bu qədər gözləyir; BindToClose isə bütün yazıları
+-- (Roblox ~30 s verir) ehtiyatla 25 s-ə qədər gözləyir
+local SAVE_QUEUE_WAIT = 20
+local CLOSE_WAIT = 25
+local RESPAWN_DELAY = 2
+
+-- Hazırda gedən DataStore yazıları (save və kilid buraxılması). BindToClose bunlar bitənə qədər
+-- qayıtmır, yoxsa server bağlanar və son save/kilid buraxılması itər.
+local pendingWrites = 0
 
 -- Client-ə göndərilən hadisələr (qalanları yalnız serverdə dünyanı dəyişir)
 local CLIENT_EVENTS = {
@@ -110,6 +119,16 @@ local function inWater(position: Vector3): boolean
 	return false
 end
 
+-- Ayaq altında bərk, su olmayan səth varmı (server özü yoxlayır; client-in FloorMaterial-ına güvənmir)
+local function onSolidGround(char: Model, pos: Vector3): boolean
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { char }
+	params.RespectCanCollide = true
+	local hit = workspace:Raycast(pos, Vector3.new(0, -6, 0), params)
+	return hit ~= nil and not CollectionService:HasTag(hit.Instance, "TG_Water")
+end
+
 local function requestSave(a: Active, delay: number)
 	local at = os.clock() + delay
 	if not a.saveSoonAt or at < a.saveSoonAt then
@@ -121,9 +140,19 @@ local function doSave(a: Active, release: boolean)
 	if a.saving and not release then
 		return
 	end
+	pendingWrites += 1
+	-- Save-lər ardıcıldır: eyni revision ilə iki paralel yazı birini "revision" xətası ilə rədd etdirərdi
+	-- (buraxılış save-i itər və kilid 'SESSION_LOCK_SECONDS' qədər qalardı)
+	local deadline = os.clock() + SAVE_QUEUE_WAIT
+	while a.saving and os.clock() < deadline do
+		task.wait(0.1)
+	end
 	a.saving = true
-	local ok, why = PlayerDataService.save(a.store, release)
+	local called, result, reason = pcall(PlayerDataService.save, a.store, release)
 	a.saving = false
+	pendingWrites -= 1
+	local ok = called and result == true
+	local why = if called then reason else tostring(result)
 	if not ok then
 		warn(("[TinyGrove] save alınmadı (%s)"):format(tostring(why)))
 		Telemetry.log(a.player, "save_error", tostring(why), a.game.profile.playSeconds)
@@ -222,7 +251,9 @@ local function startSession(player: Player)
 	loadingPlayer = nil
 	if not player.Parent then
 		if storeSession then
-			PlayerDataService.release(storeSession)
+			pendingWrites += 1
+			pcall(PlayerDataService.release, storeSession)
+			pendingWrites -= 1
 		end
 		return
 	end
@@ -253,6 +284,17 @@ local function startSession(player: Player)
 	active = a
 	WorldService.applyAll(session.profile)
 	player.CharacterAdded:Connect(function(char: Model)
+		-- CharacterAutoLoads=false: personaj ölərsə (məs. Esc → Reset) özümüz yenidən yaradırıq
+		local humanoid = char:WaitForChild("Humanoid", 10)
+		if humanoid and humanoid:IsA("Humanoid") then
+			humanoid.Died:Connect(function()
+				task.delay(RESPAWN_DELAY, function()
+					if active == a and not a.closed and player.Parent and player.Character == char then
+						player:LoadCharacter()
+					end
+				end)
+			end)
+		end
 		char:WaitForChild("Head", 10)
 		applyLook(a)
 		task.defer(function()
@@ -297,12 +339,11 @@ local function heartbeat(dt: number)
 		if a.safeAcc >= 0.25 then
 			a.safeAcc = 0
 			local char = a.player.Character
-			local humanoid = char and char:FindFirstChildOfClass("Humanoid")
 			local wet = inWater(pos)
 			if wet or pos.Y < -30 then
 				local target = a.lastSafe or Vector3.new(table.unpack(Layout.zoneLayout["Z01"].safeSpawn))
 				teleport(a.player, { target.X, target.Y, target.Z })
-			elseif humanoid and humanoid.FloorMaterial ~= Enum.Material.Air then
+			elseif char and onSolidGround(char, pos) then
 				a.lastSafe = pos
 			end
 		end
@@ -386,8 +427,14 @@ function SessionService.init()
 		local a = active
 		if a then
 			a.closed = true
+			a.game:stopWork()
 			active = nil
 			doSave(a, true)
+		end
+		-- PlayerRemoving-də başlamış save/kilid buraxılması hələ gedə bilər: bitməsini gözlə
+		local deadline = os.clock() + CLOSE_WAIT
+		while pendingWrites > 0 and os.clock() < deadline do
+			task.wait(0.1)
 		end
 	end)
 end

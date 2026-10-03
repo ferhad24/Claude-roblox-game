@@ -2,6 +2,7 @@
 -- HUD (bölmə 17): yuxarı solda damğa, güc və XP; yuxarı sağda əsas tapşırıq; aşağıda 4 alət yuvası;
 -- çanta və su yalnız əlaqəli olanda görünür; mükafat bildirişi 1,5 s, eyni işdə birləşdirilir.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Constants = require(Shared.Constants)
@@ -268,12 +269,14 @@ function Hud.init(rootGui: ScreenGui)
 	})
 	Kit.list(sideList, false, 2)
 
-	-- Menyu düymələri (sağda, tapşırığın altında)
+	-- Menyu düymələri: PC-də sağda tapşırığın altında. Toxunuşlu cihazda sağ tərəfdə iş/əlaqə sütunu
+	-- olduğu üçün solda, statistika panelinin altında (üst-üstə düşməsin)
+	local touch = UserInputService.TouchEnabled
 	menuBar = Kit.frame(frame, {
 		name = "Menu",
 		size = UDim2.fromOffset(0, 48),
-		pos = UDim2.new(1, -12, 0, 150),
-		anchor = Vector2.new(1, 0),
+		pos = if touch then UDim2.fromOffset(12, 96) else UDim2.new(1, -12, 0, 150),
+		anchor = if touch then Vector2.new(0, 0) else Vector2.new(1, 0),
 		transparency = 1,
 		auto = Enum.AutomaticSize.X,
 		radius = 0,
@@ -316,7 +319,14 @@ function Hud.init(rootGui: ScreenGui)
 			if Hud.onSlot then
 				Hud.onSlot(i)
 			end
-		end, { raw = true, style = "soft", size = UDim2.fromOffset(150, 52), textSize = 14, order = i })
+		end, {
+			raw = true,
+			style = "soft",
+			-- Telefonda 4×150 px hotbar tullanma düyməsinin altına düşürdü: toxunuşda yığcam (≥48 px hədəf)
+			size = UDim2.fromOffset(if touch then 96 else 150, 52),
+			textSize = if touch then 12 else 14,
+			order = i,
+		})
 		table.insert(slotButtons, b)
 	end
 

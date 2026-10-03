@@ -59,7 +59,8 @@ function Net.init()
 end
 
 -- Sorğu göndərir; nəticə callback-ə gəlir. Uğursuz nəticə HUD-da göstərilmək üçün Result siqnalına da gedir.
-function Net.request(action: string, payload: { [string]: any }?, callback: ((any) -> ())?)
+-- quiet=true: uğursuz nəticə Net.Result ilə yayılmır (ümumi xəta bildirişi göstərilmir); callback özü qərar verir
+function Net.request(action: string, payload: { [string]: any }?, callback: ((any) -> ())?, quiet: boolean?)
 	nextRid += 1
 	local rid = nextRid
 	local body: { [string]: any } = payload or {}
@@ -68,7 +69,9 @@ function Net.request(action: string, payload: { [string]: any }?, callback: ((an
 		if callback then
 			callback(result)
 		end
-		Net.Result:Fire(action, result)
+		if not (quiet and type(result) == "table" and not result.ok) then
+			Net.Result:Fire(action, result)
+		end
 	end
 	actionRemote:FireServer(action, body)
 end

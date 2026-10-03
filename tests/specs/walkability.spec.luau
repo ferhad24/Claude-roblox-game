@@ -33,6 +33,7 @@ return function(T)
 	local function rasterize(level, state)
 		local blocked = {}
 		local ground = {}
+		local river = {}
 		local function fillRect(target, cx, cz, sx, sz, rot, pad)
 			local r = math.sqrt(sx * sx + sz * sz) / 2 + pad + 1
 			for x = math.floor(cx - r), math.ceil(cx + r) do
@@ -61,7 +62,7 @@ return function(T)
 				end
 			end
 			for _, wt in zl.water do
-				fillRect(blocked, wt.pos[1], wt.pos[3], wt.size[1], wt.size[3], 0, RADIUS)
+				fillRect(river, wt.pos[1], wt.pos[3], wt.size[1], wt.size[3], 0, RADIUS)
 			end
 			for _, pr in zl.props do
 				local collide = pr.collide ~= false and pr.name ~= "Ramp"
@@ -103,15 +104,25 @@ return function(T)
 				end
 			end
 		end
-		-- Körpü: çayın üstündə keçid
+		-- Körpü: yalnız çay xanalarını açır (digər maneələr qalır); görünməz məhəccərlər (Placeholders.bridge)
+		-- körpünün iki kənarında bərk divar kimidir
 		if level == 0 and state.bridge then
 			local s = Layout.byId["Z02_BridgeSocket"]
-			for x = s.pos[1] - 2, s.pos[1] + 1 do
-				for z = s.pos[3] - 10, s.pos[3] + 9 do
-					blocked[idx(x, z)] = nil
-					ground[idx(x, z)] = true
-				end
+			local span = s.extra.span
+			local width = s.extra.width
+			local z0, z1 = s.pos[3] + span[3], s.pos[3] + span[6]
+			local deck = {}
+			fillRect(deck, s.pos[1], (z0 + z1) / 2, width, z1 - z0, 0, 0)
+			for i in deck do
+				river[i] = nil
+				ground[i] = true
 			end
+			for _, side in { -1, 1 } do
+				fillRect(blocked, s.pos[1] + side * width / 2, (z0 + z1) / 2, 0.3, z1 - z0, 0, RADIUS)
+			end
+		end
+		for i in river do
+			blocked[i] = true
 		end
 		return blocked, ground
 	end

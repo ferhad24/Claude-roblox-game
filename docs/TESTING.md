@@ -1,6 +1,6 @@
 # Testlər və nəticələr
 
-Son yoxlama: `./scripts/check.sh` keçdi. Nəticə: 82 məntiq testi keçdi, 0 uğursuz; strict tip yoxlamasında 0 xəta;
+Son yoxlama: `./scripts/check.sh` keçdi. Nəticə: 84 məntiq testi keçdi, 0 uğursuz; strict tip yoxlamasında 0 xəta;
 2 DOM tüstü testi xətasız.
 
 ## Nə yoxlanır və nə yoxlanmır
@@ -74,7 +74,8 @@ catalog.spec       kataloq yoxlaması; mutasiya testi (yoxlamanın həqiqətən 
 progression.spec   XP düsturu, güc əlavəsi, ustalıq xərcləri və 10% tavanı
 z01_first20.spec   ilk 20 dəqiqə (bot)
 water.spec         əlaqəsiz çıxış, 1 doza/s, qapalı halqa, çarx+nasos, çənin növbəli bölgüsü, struktur yoxlaması
-security.spec      duplikasiya, iş doğrulaması, qurğu/su, pauza/oflayn, yanlış sorğular, sürət limiti, lift
+security.spec      duplikasiya, iş doğrulaması (fırlanmış footprint-ə məsafə), qurğu/su, pauza/oflayn, yanlış sorğular,
+                   sürət limiti (StopWork ayrıca qrupdadır), lift
 save.spec          sessiya kilidi, köhnəlmiş kilid, yükləmə xətası, retry, v0 miqrasiyası, gələcək versiya, təmizləmə
 locales.spec       koddakı bütün mətn açarları AZ və EN-də var
 campaign.spec      tam kampaniya, güc 15 zəmanəti, finaldan sonrası, hər fəsildən sonra save/load
@@ -83,7 +84,8 @@ mechanics.spec     çiləyici, şeh çiləyicisi, kompost, rəf, əkin qabının
 walkability.spec   1 stud-luq şəbəkədə gedişə yararlılıq (flood fill): bağlı sahələrə sızma yoxdur, hər fəslin
                    obyektlərinə və bütün interaktiv obyektlərə çatmaq olur, hər sahənin təhlükəsiz spawn nöqtəsi əlçatandır
 tests/dom/world_smoke.luau   yığılmış yerdə dünya qurulması, bütün qurğu növləri, personaj görünüşü
-tests/dom/ui_smoke.luau      UI → real oyun nüvəsi: Başla, 11 panel, alış, iş, su, tikinti
+tests/dom/ui_smoke.luau      UI → real oyun nüvəsi: Başla, 11 panel, alış, iş, su, tikinti; şəbəkə gecikməsi
+                             rejimində basılı iş düyməsi 11 kadrda yalnız 1 StartWork göndərir
 ```
 
 ## Yoxlama zamanı tapılan real xətalar (düzəldilib)
@@ -93,6 +95,33 @@ tests/dom/ui_smoke.luau      UI → real oyun nüvəsi: Başla, 11 panel, alış
 - **Tək koordinatlı sabit portlar** təbii mənbədən 4 stud-luq kanalla əlçatan deyildi. Kataloq yoxlaması əlavə olundu, portlar cüt koordinata köçürüldü.
 - **Güc 15 sənəddəki rəqəmlərlə əldə olunmurdu** (335 XP çatmırdı). `campaign.spec` tapdı; bax: DESIGN_DECISIONS.
 - **Liftdən yuxarı dayanacaqdan aşağı enmək mümkün deyildi.** Yuxarıda əlaqə nöqtəsi əlavə olundu; indi `security.spec` yoxlayır.
+
+### Roblox runtime kod yoxlaması (ayrıca agent, kodu oxumaqla; Studio-da işlədilməyib)
+
+Server və client kodu Roblox davranışı baxımından ayrıca oxunub yoxlanıldı. Tapılan və düzəldilən məsələlər:
+
+| Məsələ | Nəticəsi | Düzəliş | Avtomatik test |
+|---|---|---|---|
+| Oyunçu çıxanda save `BindToClose` ilə yarışırdı | son ~150 s itə və kilid qala bilərdi | gedən yazılar sayılır, `BindToClose` 25 s-ə qədər gözləyir | yoxdur (Roblox API) |
+| Avtomatik save gedərkən çıxış save-i paralel başlaya bilərdi | eyni revision, çıxış save-i "revision" ilə rədd olunardı | save-lər ardıcıldır | yoxdur (Roblox API) |
+| Kilid müddəti 30 dəq idi | server çökəndə oyunçu 30 dəq girə bilməzdi | 600 s (4 save intervalı) | `save.spec` (köhnəlmiş kilid) |
+| Canlı serverdə DataStore xətasında yaddaşdaxili rejimə keçid | oyunçu təzə profillə başlayar, heç nə saxlanmazdı | yaddaşdaxili rejim yalnız Studio-da | yoxdur |
+| Esc → Reset | personaj yenidən yaranmırdı (softlock) | 2 s sonra son təhlükəsiz nöqtədə yaranma | yoxdur |
+| Basılı iş düyməsi hər kadrda `StartWork` göndərirdi | sürət limiti xətaları, `StopWork` da rədd oluna bilərdi | sorğu gözlənilir, rədddən sonra avtomatik təkrar yoxdur; `StopWork` ayrıca limit | `ui_smoke` (gecikmə), `security.spec` |
+| Client ipucu məsafəsi serverdən fərqli idi | "edə bilərsən" görünür, server "uzaqdır" deyirdi | client və server eyni `Layout.distanceTo` / `Placement.distanceToBuild` | `security.spec` |
+| Lampa və körpü ipucusuz hədəf olurdu | yaxındakı yarpağın ipucu görünmürdü | ipucusu olmayan obyekt hədəf seçilmir | yoxdur |
+| Ev anbarındakı su götürülə bilmirdi | çəndən yığılan su itirdi | anbarda "Doldur" seçimi | yoxdur (UI) |
+| Kinematika keçiləndə kamera tween-i davam edirdi | 7 s-ə qədər kamera "dartışırdı" | tween saxlanılır və dayandırılır | yoxdur |
+| Açıq panel hər snapshot-da yenidən qurulurdu | su xətti işləyəndə düymə toxunuş zamanı silinirdi | yalnız göstərilən məlumat dəyişəndə | yoxdur |
+| Lift yuxarı dayanacağı divarın görünməz qapağında idi | oyunçu itələnib aşağı düşə bilərdi | dayanacaq masanın üstünə (Z=−34) | `walkability.spec`, `security.spec` |
+| Qeyri-bərabər ölçülü kürələr | Roblox onları bərabər kürəyə çevirir, görünüş layout-a uymur | blok + sfera mesh | yoxdur |
+| Server təhlükəsiz nöqtəni client-in `FloorMaterial`-ından oxuyurdu | serverdə etibarsız ola bilər | serverdə aşağıya raycast | yoxdur |
+| Shift həm qaçış, həm Shift Lock idi | kamera rejimi gözlənilmədən dəyişirdi | `EnableMouseLockOption=false` | yoxdur |
+| Hazır körpü modeli yerinə qoyulmurdu | final asset yanlış yerdə görünərdi | `PivotTo` | yoxdur |
+
+`walkability.spec`-də körpü əvvəl xanaları zorla açırdı və bu, körpüdəki başqa maneələri gizlədə bilərdi. İndi körpü yalnız çay
+xanalarını açır, görünməz məhəccərlər isə divar kimi modellənir. Ayaqqabı köhnə yerinə qaytarılanda test Z03-ü əlçatmaz
+göstərir (mutasiya ilə yoxlanıldı).
 
 `walkability.spec` Roblox fizikasının dəqiq modeli deyil: pillə, tullanma, sürüşmə, personaj kapsulunun dəqiq forması yoxdur.
 Layout xətalarını tutur, amma Studio-da gəzinti testini əvəz etmir.

@@ -157,30 +157,15 @@ function Game.distanceToObject(self: Session, obj: LayoutObject): number
 	if not pos then
 		return math.huge
 	end
-	if math.abs(pos[2] - obj.pos[2]) > 14 then
-		return math.huge
-	end
-	local size = Layout.sizeOf(obj)
-	local hx, hz = size[1] / 2, size[3] / 2
-	local dx = math.max(0, math.abs(pos[1] - obj.pos[1]) - hx)
-	local dz = math.max(0, math.abs(pos[3] - obj.pos[3]) - hz)
-	return math.sqrt(dx * dx + dz * dz)
+	return Layout.distanceTo(obj, pos[1], pos[2], pos[3])
 end
 
 function Game.distanceToBuild(self: Session, b: PlacedBuild): number
 	local pos = self.pos
-	local c = Placement.worldCenter(b)
-	if not pos or not c then
+	if not pos then
 		return math.huge
 	end
-	if math.abs(pos[2] - c[2]) > 14 then
-		return math.huge
-	end
-	local def = BuildDefs.byId[b.t]
-	local rect = Placement.footprintRect(def, c, b.r, b.v)
-	local dx = math.max(0, rect.x0 - pos[1], pos[1] - rect.x1)
-	local dz = math.max(0, rect.z0 - pos[3], pos[3] - rect.z1)
-	return math.sqrt(dx * dx + dz * dz)
+	return Placement.distanceToBuild(b, pos[1], pos[2], pos[3])
 end
 
 function Game.zoneOpen(self: Session, zone: string): boolean
@@ -789,7 +774,7 @@ Actions.StartWork = {
 }
 
 Actions.StopWork = {
-	group = "work",
+	group = "stop",
 	fn = function(self, _payload)
 		return self:stopWork()
 	end,

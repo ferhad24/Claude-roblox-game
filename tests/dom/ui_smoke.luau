@@ -134,6 +134,7 @@ local TweenService = {
 					inst[k] = v
 				end
 			end,
+			Cancel = function() end,
 		}
 	end,
 }
@@ -343,19 +344,41 @@ local function pushEvents()
 	end
 end
 
+-- Şəbəkə gecikməsi rejimi: sorğular növbəyə yığılır və flush() ilə emal olunur (cavab + snapshot gec gəlir)
+local latency = false
+local queue = {}
+local startCount = 0
+local function flush()
+	local q = queue
+	queue = {}
+	for _, fn in q do
+		fn()
+	end
+end
+
 roblox.implementMethod("RemoteEvent", "FireServer", function(remote, a, b)
 	sent += 1
 	if remote.Name == "Action" then
-		clock += 1
-		local result = session:handle(a, b, clock)
-		if not result.ok then
-			print(("   server rədd etdi: %s → %s"):format(tostring(a), tostring(result.err)))
+		if a == "StartWork" then
+			startCount += 1
 		end
-		if type(b) == "table" and b.rid then
-			signalFor(remotes.Result, "OnClientEvent"):Fire(b.rid, result)
+		local function deliver()
+			clock += 1
+			local result = session:handle(a, b, clock)
+			if not result.ok then
+				print(("   server rədd etdi: %s → %s"):format(tostring(a), tostring(result.err)))
+			end
+			if type(b) == "table" and b.rid then
+				signalFor(remotes.Result, "OnClientEvent"):Fire(b.rid, result)
+			end
+			pushEvents()
+			pushState()
 		end
-		pushEvents()
-		pushState()
+		if latency then
+			table.insert(queue, deliver)
+		else
+			deliver()
+		end
 	elseif remote.Name == "Session" then
 		signalFor(remotes.Session, "OnClientEvent"):Fire({ status = "ready", testMode = true, isNew = true })
 		pushState()
@@ -478,6 +501,37 @@ UserInputService.InputEnded:Fire({
 })
 assert(profile.restoredObjectIds["Z01_Leaf_01"], "yarpaq təmizlənmədi")
 print("UI ilə iş: Z01_Leaf_01 təmizləndi, lif=" .. tostring(profile.bag["MAT_FIBER"]))
+
+-- Gecikmə ilə iş: cavab və snapshot 10 kadr gec gəlir. Basılı düymə StartWork-u hər kadrda
+-- təkrar göndərməməlidir (əvvəl belə olurdu və sürət limiti xətaları yaranırdı)
+-- Yarpaq 2-nin şimal-şərqi (Nərgizdən uzaq), standart baxış −Z (Lune lookAt məhdudiyyəti)
+hrp.CFrame = roblox.CFrame.new(2, 3, 78)
+hrp.Position = hrp.CFrame.Position
+session:setPosition(2, 0, 78)
+latency = true
+local startsBefore = startCount
+RunService.RenderStepped:Fire(0.1)
+UserInputService.InputBegan:Fire(
+	{ UserInputType = roblox.Enum.UserInputType.MouseButton1, KeyCode = roblox.Enum.KeyCode.Unknown },
+	false
+)
+for _ = 1, 10 do
+	RunService.RenderStepped:Fire(0.1)
+end
+assert(startCount - startsBefore == 1, "gecikmədə StartWork təkrarlandı: " .. (startCount - startsBefore))
+latency = false
+flush()
+assert(session.work and session.work.id == "Z01_Leaf_02", "gecikmədən sonra iş başlamadı")
+for _ = 1, 5 do
+	RunService.RenderStepped:Fire(0.1)
+end
+assert(startCount - startsBefore == 1, "snapshot-dan sonra StartWork təkrarlandı")
+UserInputService.InputEnded:Fire({
+	UserInputType = roblox.Enum.UserInputType.MouseButton1,
+	KeyCode = roblox.Enum.KeyCode.Unknown,
+})
+assert(session.work == nil, "düymə buraxılanda iş dayanmadı")
+print("Gecikmə ilə iş: 11 kadrda 1 StartWork, buraxanda StopWork")
 
 -- E ilə şeh qabını doldurmaq
 -- Qeyd: Lune 0.10.5-də CFrame.lookAt düz +Z istiqamətində səhv LookVector (0,0,−1) qaytarır;

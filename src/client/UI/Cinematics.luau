@@ -14,6 +14,16 @@ local caption: TextLabel
 local skipButton: TextButton
 local running = false
 local skipRequested = false
+local currentTween: Tween? = nil
+
+-- Keçəndə və ya bitəndə gedən kamera tween-i dayandırılır, yoxsa standart kamera ilə "dartışar"
+local function cancelTween()
+	local tw = currentTween
+	currentTween = nil
+	if tw then
+		tw:Cancel()
+	end
+end
 
 Cinematics.reducedMotion = false
 
@@ -37,14 +47,20 @@ local function shot(fromCF: CFrame, toCF: CFrame, seconds: number, captionKey: s
 		cam.CFrame = toCF
 	else
 		cam.CFrame = fromCF
-		TweenService
-			:Create(cam, TweenInfo.new(seconds, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { CFrame = toCF })
-			:Play()
+		cancelTween()
+		local tw = TweenService:Create(
+			cam,
+			TweenInfo.new(seconds, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+			{ CFrame = toCF }
+		)
+		currentTween = tw
+		tw:Play()
 	end
 	local t = 0
 	while t < seconds and not skipRequested do
 		t += task.wait(0.1)
 	end
+	cancelTween()
 end
 
 local function begin()
@@ -55,6 +71,7 @@ local function begin()
 end
 
 local function finish()
+	cancelTween()
 	local cam = camera()
 	cam.CameraType = Enum.CameraType.Custom
 	overlay.Visible = false
@@ -68,6 +85,7 @@ end
 
 function Cinematics.skip()
 	skipRequested = true
+	cancelTween()
 end
 
 -- 8 saniyəlik açılış: qoz evindən bağa baxış və idarəetmə göstərişi

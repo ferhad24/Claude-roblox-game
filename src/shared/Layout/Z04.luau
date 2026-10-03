@@ -82,7 +82,8 @@ local layout: Types.ZoneLayout = {
 		},
 		{ id = "Z04_Spot_Leaf_01", kind = "spot", zone = "Z04", pos = { -126, 0, -80 }, spawns = { "W_LEAF" } },
 		{ id = "Z04_Mem", kind = "memory", def = "MEM_CHINA", zone = "Z04", pos = { -127, 0, -108 } },
-		-- Yük lifti: aşağı platforma Z04-də, yuxarı enmə yeri Z05 masasının kənarında (Y=24)
+		-- Yük lifti: aşağı platforma Z04-də, yuxarı enmə yeri Z05 masasının üstündə (Y=24).
+		-- Masanın kənarı Z=−36, sərhəd divarı və onun görünməz qapağı Z −41..−39: enmə yeri masada, divardan aralı
 		{
 			id = "Z04_LiftSocket",
 			kind = "socket",
@@ -90,7 +91,7 @@ local layout: Types.ZoneLayout = {
 			zone = "Z04",
 			pos = { -100, 0, -46 },
 			opens = "Z05",
-			extra = { top = { -100, 24, -46 }, landing = { -100, 24, -39 }, size = { 8, 1, 8 } },
+			extra = { top = { -100, 24, -46 }, landing = { -100, 24, -34 }, size = { 8, 1, 8 } },
 		},
 	},
 	areas = {

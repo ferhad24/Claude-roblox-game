@@ -52,8 +52,10 @@ Oyun başlayanda server əvvəlcə kataloq yoxlamasını aparır. Xəta olarsa, 
 
 ## 4. Yaddaş (DataStore)
 
-- Yer yayımlanmayıbsa və ya Studio-da API girişi bağlıdırsa, server **test adapterinə** keçir. Bu halda
+- **Yalnız Studio-da:** yer yayımlanmayıbsa və ya API girişi bağlıdırsa, server **test adapterinə** keçir. Bu halda
   irəliləyiş yalnız server işlədiyi müddətdə yaddaşda qalır və ekranda "Test rejimi" yazısı görünür.
+- Canlı serverdə test adapterinə heç vaxt keçilmir: DataStore xətası olarsa oyunçu "yenidən cəhd" ekranını görür,
+  təzə profillə başlamır və köhnə save-in üzərinə yazılmır.
 - Canlı DataStore-u Studio-da yoxlamaq üçün yeri öz hesabınıza yayımlamalı və oyun ayarlarında
   Studio-nun API xidmətlərinə girişini açmalısınız. Bu addımı yalnız siz edə bilərsiniz.
 - DataStore adı: `TinyGrove_Profiles_v1` (`src/shared/Constants.luau`). Açar: `p_<UserId>`. Studio-dakı

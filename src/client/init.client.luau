@@ -255,7 +255,7 @@ local foliageAcc = 0
 RunService.RenderStepped:Connect(function(dt: number)
 	Hud.update(dt)
 	Effects.update(dt)
-	Interaction.update()
+	Interaction.update(dt)
 	foliageAcc += dt
 	if foliageAcc >= 0.1 then
 		foliageAcc = 0

@@ -101,6 +101,9 @@ local function rebuildGhost(center: Vector3)
 	setGhostColor(valid)
 end
 
+local cachedGraph: Water.Graph? = nil
+local graphFor: { [string]: any }? = nil
+
 -- Yaxındakı boş çıxış portuna bitişmə: qurğunun giriş portu həmin nöqtəyə düşür və axın istiqamətini davam etdirir
 local function snapToPort(s: { [string]: any }, hit: Vector3): (Placement.PlaceRequest?, number?)
 	local def = BuildDefs.byId[buildId :: string]
@@ -115,7 +118,12 @@ local function snapToPort(s: { [string]: any }, hit: Vector3): (Placement.PlaceR
 		return nil, nil
 	end
 	local profile = asProfile(s)
-	local graph = Water.build(profile)
+	-- Su qrafı hər kadrda yox, yalnız yeni snapshot gələndə qurulur
+	if graphFor ~= s or not cachedGraph then
+		cachedGraph = Water.build(profile)
+		graphFor = s
+	end
+	local graph = cachedGraph :: Water.Graph
 	local best: Placement.PlaceRequest? = nil
 	local bestR: number? = nil
 	local bestDist = 4
