@@ -18,6 +18,21 @@ Tip yoxlaması üçün Roblox tip tərifləri lazımdır. luau-lsp repozitoriyas
 `scripts/globalTypes.None.d.luau` faylını `.tools/roblox.d.luau` adı ilə kopyalayın
 (`.tools/` git-ə daxil deyil). Fayl yoxdursa `scripts/check.sh` tip yoxlamasını atlayır və bunu xəbərdarlıqla bildirir.
 
+### Windows (PowerShell): yalnız Rojo, layihə qovluğunun içinə
+
+Oyunu yığmaq üçün yalnız Rojo lazımdır. Bu əmrlər onu `.tools` qovluğuna endirir (`.tools` və `build` git-ə daxil deyil).
+Endirmə linkinin işlədiyi və arxivdə yalnız `rojo.exe` olduğu yoxlanılıb:
+
+```powershell
+New-Item -ItemType Directory -Force .tools, build | Out-Null
+Invoke-WebRequest -Uri "https://github.com/rojo-rbx/rojo/releases/download/v7.7.1/rojo-7.7.1-windows-x86_64.zip" -OutFile .tools\rojo.zip
+Expand-Archive .tools\rojo.zip -DestinationPath .tools -Force
+.\.tools\rojo.exe --version
+.\.tools\rojo.exe build default.project.json -o build\TinyGrove.rbxl
+```
+
+Qeyd: `build` qovluğu yoxdursa Rojo xəta verir, ona görə birinci sətir onu yaradır.
+
 ## 2. Yoxlamalar
 
 ```bash
