@@ -1,0 +1,165 @@
+--!strict
+-- Z06 Ürək ağacı: X −50..50, Z −40..40. Mərkəzdə nəhəng quru ağac (6, 0, 0).
+-- 5 kök düyünü (kök qayçısı, güc 15), 5 kök rezervuarı (yalnız su şəbəkəsi ilə), tac (nasos).
+local Types = require(script.Parent.Parent.Types)
+
+local layout: Types.ZoneLayout = {
+	zone = "Z06",
+	safeSpawn = { 0, 3, 36 },
+	objects = {
+		{ id = "Z06_Tree", kind = "tree", zone = "Z06", pos = { 6, 0, 0 }, extra = { size = { 16, 100, 16 } } },
+		-- Bağ kranı: sonsuz mənbə (layihə qərarı, docs/DESIGN_DECISIONS.md)
+		{
+			id = "Z06_GardenTap",
+			kind = "source",
+			zone = "Z06",
+			pos = { 6, 0, 32 },
+			ports = { { x = 0, z = -2, dir = "out" } },
+			capacity = 20,
+			regenSeconds = 2,
+			infinite = true,
+			extra = { size = { 4, 8, 4 } },
+		},
+		{
+			id = "Z06_Knot_01",
+			kind = "work",
+			def = "W_ROOT_KNOT",
+			zone = "Z06",
+			pos = { 19, 0, 2 },
+			extra = { size = { 6, 6, 6 } },
+		},
+		{
+			id = "Z06_Knot_02",
+			kind = "work",
+			def = "W_ROOT_KNOT",
+			zone = "Z06",
+			pos = { 14, 0, 10 },
+			extra = { size = { 6, 6, 6 } },
+		},
+		{
+			id = "Z06_Knot_03",
+			kind = "work",
+			def = "W_ROOT_KNOT",
+			zone = "Z06",
+			pos = { 6, 0, 13 },
+			extra = { size = { 6, 6, 6 } },
+		},
+		{
+			id = "Z06_Knot_04",
+			kind = "work",
+			def = "W_ROOT_KNOT",
+			zone = "Z06",
+			pos = { -2, 0, 10 },
+			extra = { size = { 6, 6, 6 } },
+		},
+		{
+			id = "Z06_Knot_05",
+			kind = "work",
+			def = "W_ROOT_KNOT",
+			zone = "Z06",
+			pos = { -7, 0, 2 },
+			extra = { size = { 6, 6, 6 } },
+		},
+		{
+			id = "Z06_Root_01",
+			kind = "consumer",
+			def = "ROOT_RESERVOIR",
+			zone = "Z06",
+			pos = { 28, 0, 4 },
+			ports = { { x = 0, z = 4, dir = "in" } },
+			extra = { lockedBy = "Z06_Knot_01" },
+		},
+		{
+			id = "Z06_Root_02",
+			kind = "consumer",
+			def = "ROOT_RESERVOIR",
+			zone = "Z06",
+			pos = { 20, 0, 18 },
+			ports = { { x = 0, z = 4, dir = "in" } },
+			extra = { lockedBy = "Z06_Knot_02" },
+		},
+		{
+			id = "Z06_Root_03",
+			kind = "consumer",
+			def = "ROOT_RESERVOIR",
+			zone = "Z06",
+			pos = { 6, 0, 22 },
+			ports = { { x = 0, z = 4, dir = "in" } },
+			extra = { lockedBy = "Z06_Knot_03" },
+		},
+		{
+			id = "Z06_Root_04",
+			kind = "consumer",
+			def = "ROOT_RESERVOIR",
+			zone = "Z06",
+			pos = { -8, 0, 18 },
+			ports = { { x = 0, z = 4, dir = "in" } },
+			extra = { lockedBy = "Z06_Knot_04" },
+		},
+		{
+			id = "Z06_Root_05",
+			kind = "consumer",
+			def = "ROOT_RESERVOIR",
+			zone = "Z06",
+			pos = { -16, 0, 4 },
+			ports = { { x = 0, z = 4, dir = "in" } },
+			extra = { lockedBy = "Z06_Knot_05" },
+		},
+		-- Tac: gövdənin şimal tərəfindəki su qəbuledicisi, nasos tələb edir
+		{
+			id = "Z06_Crown",
+			kind = "consumer",
+			def = "TREE_CROWN",
+			zone = "Z06",
+			pos = { 6, 0, -12 },
+			ports = { { x = 0, z = -2, dir = "in" } },
+			extra = { size = { 6, 4, 4 } },
+		},
+		{ id = "Z06_Plot_01", kind = "plot", zone = "Z06", pos = { -36, 0, 24 }, extra = { size = { 4, 1, 4 } } },
+		{ id = "Z06_Mem", kind = "memory", def = "MEM_HEART", zone = "Z06", pos = { -44, 0, -34 } },
+	},
+	areas = {
+		{ id = "A_Z06", zone = "Z06", origin = { -46, 0, -36 }, size = { 92, 72 } },
+	},
+	paths = {
+		{ x0 = -3, z0 = 34, x1 = 3, z1 = 40 },
+	},
+	ground = {
+		{ pos = { 0, -1, 0 }, size = { 100, 2, 80 } },
+	},
+	walls = {
+		{ pos = { 0, 6, -40 }, size = { 100, 12, 2 } },
+		{ pos = { 50, 6, 0 }, size = { 2, 12, 80 } },
+		{ pos = { -50, 6, 0 }, size = { 2, 12, 80 } },
+	},
+	props = {
+		{
+			name = "TreeTrunk",
+			pos = { 6, 50, 0 },
+			size = { 16, 100, 16 },
+			shape = "cylinderV",
+			color = { 120, 95, 75 },
+		},
+		{
+			name = "TreeCrownDry",
+			pos = { 6, 100, 0 },
+			size = { 60, 30, 60 },
+			shape = "ball",
+			color = { 140, 120, 95 },
+			stage = "neglected",
+			collide = false,
+		},
+		{
+			name = "TreeCrownGreen",
+			pos = { 6, 100, 0 },
+			size = { 70, 36, 70 },
+			shape = "ball",
+			color = { 111, 166, 106 },
+			stage = "restored",
+			collide = false,
+		},
+	},
+	water = {},
+}
+
+return layout

@@ -1,0 +1,53 @@
+{
+  "name": "TinyGrove",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/server"
+      }
+    },
+    "StarterPlayer": {
+      "$properties": {
+        "CameraMaxZoomDistance": 22,
+        "CameraMinZoomDistance": 8,
+        "CharacterWalkSpeed": 14,
+        "CharacterUseJumpPower": false,
+        "CharacterJumpHeight": 3.2,
+        "DevCameraOcclusionMode": "Zoom",
+        "AutoJumpEnabled": false
+      },
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/client"
+        }
+      }
+    },
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": false,
+        "FallenPartsDestroyHeight": -200
+      }
+    },
+    "Lighting": {
+      "$properties": {
+        "ClockTime": 10,
+        "Brightness": 2,
+        "GlobalShadows": true,
+        "Ambient": [0.45, 0.45, 0.42],
+        "OutdoorAmbient": [0.55, 0.55, 0.5]
+      }
+    },
+    "SoundService": {},
+    "Players": {
+      "$properties": {
+        "CharacterAutoLoads": false
+      }
+    }
+  }
+}

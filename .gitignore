@@ -1,0 +1,18 @@
+# Build outputs
+/build/
+*.rbxl
+*.rbxlx
+*.rbxm
+*.rbxmx
+!/assets/**/*.rbxm
+
+# Tooling
+/sourcemap.json
+/.tools/
+/roblox.d.luau
+
+# OS / editor
+.DS_Store
+*.swp
+.vscode/*
+!.vscode/settings.json
