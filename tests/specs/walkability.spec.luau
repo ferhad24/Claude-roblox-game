@@ -370,6 +370,20 @@ return function(T)
 				print("      əlçatmaz: " .. m)
 			end
 			T.expect(#missing).toBe(0)
+			-- Sahələrin təhlükəsiz nöqtələri (rahat keçid, suya düşəndə qaytarma) keçilə bilən hüceyrədədir
+			for _, zl in Layout.zones do
+				local sp = zl.safeSpawn
+				local level = if sp[2] > 12 then 24 else 0
+				local ok = false
+				for dx = -1, 1 do
+					for dz = -1, 1 do
+						if grids[level].seen[idx(math.floor(sp[1]) + dx, math.floor(sp[3]) + dz)] then
+							ok = true
+						end
+					end
+				end
+				T.expect(ok).toBe(true, "təhlükəsiz nöqtə əlçatmazdır: " .. zl.zone)
+			end
 		end)
 	end)
 end
