@@ -149,7 +149,7 @@ function Effects.update(dt: number)
 	local now = os.clock()
 	-- Çarxlar və kanallar: son 1,5 s-də su keçibsə
 	for _, m in CollectionService:GetTagged("TG_Build") do
-		if m:IsA("Model") then
+		if m:IsA("Model") and m.Parent ~= nil then
 			local flowT = m:GetAttribute("TG_Flow") :: number?
 			local flowing = flowT ~= nil and now - (flowT :: number) < 1.5
 			local water = m:FindFirstChild("Water") :: BasePart?

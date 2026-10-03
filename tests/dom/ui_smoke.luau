@@ -111,9 +111,17 @@ local CollectionService = {
 		end
 	end,
 	GetTagged = function(_, tag)
+		-- Roblox Destroy zamanı tag-ları silir: silinmiş instansları atırıq
 		local out = {}
 		for inst in tags[tag] or {} do
-			table.insert(out, inst)
+			local alive = pcall(function()
+				return inst.Parent
+			end)
+			if alive and inst.Parent ~= nil then
+				table.insert(out, inst)
+			else
+				tags[tag][inst] = nil
+			end
 		end
 		return out
 	end,
@@ -513,6 +521,105 @@ print(
 	)
 )
 Build.cancel()
+
+-- Yerləşdirilmiş kanalın kontekst menyusu: "Yığ" → qurğu inventara qayıdır
+do
+	local uid = nil
+	for id, b in profile.builds do
+		if b.t == "B_CHANNEL" then
+			uid = id
+		end
+	end
+	assert(uid, "kanal yoxdur")
+	local wm = workspace:FindFirstChild("World")
+	-- Kontekst menyusu Interaction.interact ilə açılır: hədəfi birbaşa təyin etmək üçün yaxına get
+	hrp.CFrame = roblox.CFrame.new(24, 3, 88) * roblox.CFrame.Angles(0, math.pi, 0)
+	hrp.Position = hrp.CFrame.Position
+	session:setPosition(24, 0, 88)
+	RunService.RenderStepped:Fire(0.1)
+	UserInputService.InputBegan:Fire(
+		{ UserInputType = roblox.Enum.UserInputType.Keyboard, KeyCode = roblox.Enum.KeyCode.E },
+		false
+	)
+	local menu = ui:FindFirstChild("ContextMenu")
+	local storeBtn = menu and findButton(menu, function(b)
+		return b.Text == "Yığ"
+	end)
+	if storeBtn then
+		signalFor(storeBtn, "Activated"):Fire()
+		print("Kontekst menyusu: kanal yığıldı, inventarda " .. tostring(profile.buildInv["B_CHANNEL"]))
+	else
+		print("Kontekst menyusu: hədəf kanal deyildi (yaxındakı başqa obyekt seçildi)")
+	end
+	local _ = wm
+end
+
+-- NPC dialoqu (Usta Pıtır) → dükan açılır
+hrp.CFrame = roblox.CFrame.new(-22, 3, 85) * roblox.CFrame.Angles(0, math.pi, 0)
+hrp.Position = hrp.CFrame.Position
+session:setPosition(-22, 0, 85)
+RunService.RenderStepped:Fire(0.1)
+UserInputService.InputBegan:Fire(
+	{ UserInputType = roblox.Enum.UserInputType.Keyboard, KeyCode = roblox.Enum.KeyCode.E },
+	false
+)
+assert(Dialog.isOpen(), "dialoq açılmadı")
+Dialog.advance()
+Dialog.advance()
+assert(Panels.isOpen() and Panels.current() == "shop", "dialoqdan sonra dükan açılmadı")
+Panels.close()
+print("NPC dialoqu → dükan: işləyir")
+
+-- Boş əkin yerində toxum seçimi
+profile.seeds["SEED_DAISY"] = 2
+session.dirty = true
+pushState()
+hrp.CFrame = roblox.CFrame.new(-16, 3, 84) -- −Z istiqamətinə (əkin yerinə) baxır
+hrp.Position = hrp.CFrame.Position
+session:setPosition(-16, 0, 84)
+RunService.RenderStepped:Fire(0.1)
+UserInputService.InputBegan:Fire(
+	{ UserInputType = roblox.Enum.UserInputType.Keyboard, KeyCode = roblox.Enum.KeyCode.E },
+	false
+)
+local seedMenu = ui:FindFirstChild("ContextMenu")
+local plantBtn = seedMenu and findButton(seedMenu, function(b)
+	return b.Text:find("Ək", 1, true) ~= nil
+end)
+assert(plantBtn, "toxum menyusu açılmadı")
+signalFor(plantBtn, "Activated"):Fire()
+assert(profile.plants["Z01_Plot_02"], "toxum əkilmədi")
+print("Toxum seçimi: Z01_Plot_02-yə əkildi")
+
+-- İngilis dilində bütün panellər
+Lang.set("en")
+for name in tabs do
+	Panels.open(name)
+	Panels.close()
+end
+Lang.set("az")
+print("EN dilində bütün panellər: xətasız")
+
+-- Ayar düymələri (serverdə yoxlanılır)
+Panels.open("settings")
+local onBtn = findButton(ui, function(b)
+	return b.Text == "Açıq" or b.Text == "Bağlı"
+end)
+assert(onBtn, "ayar düyməsi yoxdur")
+local before = {}
+for k, v in profile.settings do
+	before[k] = v
+end
+signalFor(onBtn, "Activated"):Fire()
+Panels.close()
+local changed = nil
+for k, v in profile.settings do
+	if before[k] ~= v then
+		changed = k .. "=" .. tostring(v)
+	end
+end
+assert(changed, "ayar dəyişmədi")
+print("Ayar düyməsi serverdə ayarı dəyişdi: " .. changed)
 
 -- Render dövrəsi (HUD, effektlər, əlaqə)
 for _ = 1, 5 do

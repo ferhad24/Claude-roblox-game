@@ -475,7 +475,8 @@ local function interact()
 	end
 	local m = target
 	local h = targetHint
-	if not m or not h or not h.action then
+	-- Hədəf bu kadrda silinmiş ola bilər (məs. qurğu yığılıb): köhnə ID ilə sorğu göndərmirik
+	if not m or not h or not h.action or m.Parent == nil then
 		return
 	end
 	local id = m:GetAttribute("TG_Id") :: string
