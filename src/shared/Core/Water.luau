@@ -269,7 +269,14 @@ local function takeWater(p: Profile, node: Node)
 	end
 end
 
-export type Delivery = { target: Node, planter: string?, viaLine: boolean, wheels: number, zone: string? }
+export type Delivery = {
+	target: Node,
+	planter: string?,
+	viaLine: boolean,
+	wheels: number,
+	zone: string?,
+	path: { string },
+}
 
 -- Bir su tiki (1 s). Dəyişən hədəflərin siyahısını qaytarır.
 function Water.tick(p: Profile, g: Graph): { Delivery }
@@ -316,17 +323,20 @@ function Water.tick(p: Profile, g: Graph): { Delivery }
 						b.w = (b.w or 0) + 1
 					end
 					takeWater(p, em)
-					local zone = em.zone
-					table.insert(
-						deliveries,
-						{
-							target = target,
-							planter = planterUid,
-							viaLine = #t.path > 1 or target.kind ~= "tank",
-							wheels = t.wheels,
-							zone = zone,
-						}
-					)
+					local pathIds: { string } = {}
+					for _, node in t.path do
+						if node.buildType then
+							table.insert(pathIds, node.id)
+						end
+					end
+					table.insert(deliveries, {
+						target = target,
+						planter = planterUid,
+						viaLine = true,
+						wheels = t.wheels,
+						zone = em.zone,
+						path = pathIds,
+					})
 				end
 			end
 			g.rotation[em.key] = (start + 1) % n

@@ -20,16 +20,13 @@ return function(T)
 			local W = Catalog.Work
 			local Q = Catalog.Quests
 			-- 1) Təkrarlanan ID
-			table.insert(
-				R.list,
-				{
-					id = "C_ROPE",
-					nameKey = "recipe.C_ROPE",
-					group = "G_Z01",
-					inputs = {},
-					output = { id = "MAT_ROPE", n = 1 },
-				}
-			)
+			table.insert(R.list, {
+				id = "C_ROPE",
+				nameKey = "recipe.C_ROPE",
+				group = "G_Z01",
+				inputs = {},
+				output = { id = "MAT_ROPE", n = 1 },
+			})
 			local errs = Catalog.validate(Locales.maps)
 			table.remove(R.list)
 			T.expect(#errs > 0).toBeTruthy("təkrarlanan ID tutulmadı")

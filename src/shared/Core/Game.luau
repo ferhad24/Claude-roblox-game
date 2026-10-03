@@ -276,13 +276,10 @@ function Game.giveItems(self: Session, list: { Types.Amount })
 		elseif BuildDefs.byId[a.id] then
 			self.profile.buildInv[a.id] = (self.profile.buildInv[a.id] or 0) + a.n
 		end
-		self:toast(
-			"msg.got",
-			{
-				n = a.n,
-				name = (item and item.nameKey) or (BuildDefs.byId[a.id] and BuildDefs.byId[a.id].nameKey) or a.id,
-			}
-		)
+		self:toast("msg.got", {
+			n = a.n,
+			name = (item and item.nameKey) or (BuildDefs.byId[a.id] and BuildDefs.byId[a.id].nameKey) or a.id,
+		})
 	end
 	if overflow then
 		self:toast("msg.bagFull")
@@ -729,15 +726,12 @@ function Game.startWork(self: Session, targetId: string, toolId: string?): Resul
 		progress = self.profile.workProgress[targetId] or 0,
 		spot = isSpot,
 	}
-	self:emit(
-		"work",
-		{
-			id = targetId,
-			progress = (self.profile.workProgress[targetId] or 0) / def.work,
-			active = true,
-			tool = finalTool.id,
-		}
-	)
+	self:emit("work", {
+		id = targetId,
+		progress = (self.profile.workProgress[targetId] or 0) / def.work,
+		active = true,
+		tool = finalTool.id,
+	})
 	self.dirty = true
 	return ok()
 end
@@ -1805,6 +1799,71 @@ Actions.GoHome = {
 	end,
 }
 
+-- Lift: aşağı və yuxarı dayanacaq arasında (prototipdə qısa keçid kimi)
+Actions.UseLift = {
+	group = "misc",
+	fn = function(self, payload)
+		if not isId(payload.socket) then
+			return fail("msg.badRequest")
+		end
+		local obj = Layout.byId[payload.socket]
+		if not obj or obj.kind ~= "socket" or obj.def ~= "B_LIFT" then
+			return fail("msg.badRequest")
+		end
+		local built = false
+		for _, b in self.profile.builds do
+			if b.socket == payload.socket then
+				built = true
+			end
+		end
+		if not built then
+			return fail("msg.locked")
+		end
+		local extra: { [string]: any } = obj.extra or {}
+		local top = extra.landing or extra.top
+		local pos = self.pos
+		if not pos or not top then
+			return fail("msg.badRequest")
+		end
+		local function near(p: { number }): boolean
+			local dx, dy, dz = pos[1] - p[1], pos[2] - p[2], pos[3] - p[3]
+			return math.sqrt(dx * dx + dz * dz) <= 12 and math.abs(dy) <= 8
+		end
+		local target
+		if near(obj.pos) then
+			target = top
+		elseif near(top) then
+			target = { obj.pos[1], obj.pos[2], obj.pos[3] - 6 }
+		else
+			return fail("msg.tooFar")
+		end
+		self:stopWork()
+		self:emit("teleport", { pos = target })
+		return ok({ pos = target })
+	end,
+}
+
+-- Finaldan sonra: yalnız ziyarət olunmuş (açıq) sahələrə rahat keçid (bölmə 5)
+Actions.FastTravel = {
+	group = "misc",
+	fn = function(self, payload)
+		if not self.profile.finalCompleted then
+			return fail("msg.locked")
+		end
+		local zone = payload.zone
+		if type(zone) ~= "string" or not self.profile.zones[zone] then
+			return fail("msg.locked")
+		end
+		local zl = Layout.zoneLayout[zone]
+		if not zl then
+			return fail("msg.badRequest")
+		end
+		self:stopWork()
+		self:emit("teleport", { pos = zl.safeSpawn })
+		return ok({ pos = zl.safeSpawn })
+	end,
+}
+
 Actions.WatchedFinal = {
 	group = "misc",
 	fn = function(self, _payload)
@@ -2221,7 +2280,7 @@ function Game.waterTick(self: Session)
 				p.stats.wheelZones[zone] = true
 			end
 		end
-		self:emit("flow", { target = target.key })
+		self:emit("flow", { target = target.key, path = d.path })
 		changed = true
 	end
 	if changed then
@@ -2254,17 +2313,14 @@ function Game.snapshot(self: Session): { [string]: any }
 	for _, side in QuestDefs.sideTasks do
 		if self:zoneOpen(side.zone) then
 			local done, total = self:objectiveProgress(side.objective)
-			table.insert(
-				sides,
-				{
-					id = side.id,
-					textKey = side.textKey,
-					done = done,
-					total = total,
-					finished = p.quest.side[side.id] == true,
-					marker = side.marker,
-				}
-			)
+			table.insert(sides, {
+				id = side.id,
+				textKey = side.textKey,
+				done = done,
+				total = total,
+				finished = p.quest.side[side.id] == true,
+				marker = side.marker,
+			})
 		end
 	end
 	local w = self.work
