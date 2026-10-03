@@ -197,9 +197,9 @@ return {
 	["side.S5_MEMORY"] = "Masanın küncündə xatirəni tap",
 	["side.S5_LAMP"] = "İstixanaya şeh fənəri qoy",
 	["side.S5_LAVENDER"] = "Lavanda yetişdir və yığ",
+	["side.S6_SHORTCUT"] = "Ağacın qərbindəki keçidi aç",
 	["side.S6_MEMORY"] = "Ağacın kölgəsində xatirəni tap",
 	["side.S6_STAR"] = "Ulduz çiçəyi yetişdir və yığ",
-	["side.S6_ARCH"] = "Bağa çiçək tağı qoy",
 
 	-- Nailiyyətlər
 	["ach.ACH_FIRST_SPROUT"] = "İlk cücərti",
@@ -464,4 +464,17 @@ return {
 	["ui.use"] = "İstifadə et",
 	["ui.useLift"] = "Lifti işlət",
 	["ui.workshopLocked"] = "Emalatxana reseptləri tapşırıqla açılır",
+	["ui.skin"] = "Dəri tonu",
+	["ui.outfit"] = "Geyim rəngi",
+	["skin.1"] = "Ton 1",
+	["skin.2"] = "Ton 2",
+	["skin.3"] = "Ton 3",
+	["skin.4"] = "Ton 4",
+	["skin.5"] = "Ton 5",
+	["skin.6"] = "Ton 6",
+	["outfit.1"] = "Torpaq",
+	["outfit.2"] = "Mamır",
+	["outfit.3"] = "Terrakota",
+	["outfit.4"] = "Lavanda",
+	["ui.craftedCard"] = "Hazırlandı: {name} ×{n}",
 }

@@ -42,7 +42,8 @@ for _, z in chapterZone do
 end
 for _, s in Q.sideTasks do
 	-- Z06 əlavə işlərindən yalnız xatirə finaldan əvvəl mümkündür
-	if not (s.zone == "Z06" and s.id ~= "S6_MEMORY") then
+	-- Z06: finaldan əvvəl yalnız xatirə və qısa yol mümkündür (ulduz çiçəyi finaldan sonra açılır)
+	if not (s.zone == "Z06" and s.id == "S6_STAR") then
 		sideCoins[s.zone] += s.reward.coins
 		sideXp[s.zone] += s.reward.xp
 	end

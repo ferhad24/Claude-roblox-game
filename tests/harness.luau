@@ -116,8 +116,11 @@ function customRequire(target: any): any
 			require = customRequire,
 		},
 	})
-	local result = chunk()
+	local okRun, result = pcall(chunk)
 	loading[file] = nil
+	if not okRun then
+		error(result, 0)
+	end
 	moduleCache[file] = result
 	return result
 end

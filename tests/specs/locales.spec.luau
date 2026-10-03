@@ -22,8 +22,22 @@ return function(T)
 	T.describe("Lokal mətnlər", function()
 		T.it("koddakı bütün açar literalları hər iki dildə var", function()
 			local missing = {}
-			local prefixes =
-				{ "ui", "hint", "msg", "cond", "cine", "key", "lang", "vol", "sens", "q", "ts", "worktype" }
+			local prefixes = {
+				"ui",
+				"hint",
+				"msg",
+				"cond",
+				"cine",
+				"key",
+				"lang",
+				"vol",
+				"sens",
+				"q",
+				"ts",
+				"worktype",
+				"skin",
+				"outfit",
+			}
 			for _, file in walk("src", {}) do
 				local src = fs.readFile(file)
 				for key in src:gmatch('"([%w_]+%.[%w_.]+)"') do

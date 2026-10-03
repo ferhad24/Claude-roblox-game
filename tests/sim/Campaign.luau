@@ -491,7 +491,28 @@ function Campaign.run(H, Bot, opts)
 		harvestReady()
 	end
 
+	-- Save/load dövrəsi: profil serializasiya edilir (JSON), miqrasiyadan keçir və yeni sessiya yaradılır
+	local function saveLoadCycle()
+		local serde = require("@lune/serde")
+		local Profile = H.require("src/shared/Core/Profile")
+		local Game = H.require("src/shared/Core/Game")
+		local json = serde.encode("json", p)
+		local data = serde.decode("json", json)
+		local loaded, why = Profile.migrate(data, 0)
+		assert(loaded, "profil yüklənmədi: " .. tostring(why))
+		local newGame = Game.new(loaded)
+		newGame:setPosition(bot.pos[1], bot.pos[2], bot.pos[3])
+		newGame:drainEvents()
+		bot.game = newGame
+		g = newGame
+		p = loaded
+		metrics.saveLoads = (metrics.saveLoads or 0) + 1
+	end
+
 	local function chapterDone(n)
+		if opts and opts.saveLoadEachChapter then
+			saveLoadCycle()
+		end
 		metrics.chapterTimes[n] = bot:totalSeconds()
 		bot:note("Fəsil %d bitdi: damğa=%d güc=%d XP=%d", n, p.coins, bot:power(), p.workXP)
 		local ch = QuestDefs.chapters[n]
@@ -783,6 +804,8 @@ function Campaign.run(H, Bot, opts)
 	assert(p.finalCompleted, "final tamamlanmadı")
 	chapterDone(6)
 	metrics.final = true
+	metrics.profile = p
+	metrics.game = g
 	metrics.coins = p.coins
 	metrics.power = bot:power()
 	metrics.totalSeconds = bot:totalSeconds()

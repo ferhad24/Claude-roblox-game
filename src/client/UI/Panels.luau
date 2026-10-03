@@ -850,6 +850,8 @@ renderers.settings = function(s)
 	choice("textSize", "ui.textSize", { 0.9, 1, 1.2, 1.4 }, { "ts.s", "ts.m", "ts.l", "ts.xl" })
 	toggle("markers", "ui.markers")
 	toggle("rainFx", "ui.rainFx")
+	choice("skin", "ui.skin", { 1, 2, 3, 4, 5, 6 }, { "skin.1", "skin.2", "skin.3", "skin.4", "skin.5", "skin.6" })
+	choice("outfit", "ui.outfit", { 1, 2, 3, 4 }, { "outfit.1", "outfit.2", "outfit.3", "outfit.4" })
 	section(Lang.t("ui.audioNote"), nextOrder())
 end
 

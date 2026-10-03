@@ -117,12 +117,35 @@ local layout: Types.ZoneLayout = {
 		},
 		{ id = "Z06_Plot_01", kind = "plot", zone = "Z06", pos = { -36, 0, 24 }, extra = { size = { 4, 1, 4 } } },
 		{ id = "Z06_Mem", kind = "memory", def = "MEM_HEART", zone = "Z06", pos = { -44, 0, -34 } },
+		-- Yenilənən yuvalar (bölmə 9: hər açılmış sahədə ən azı 3)
+		{ id = "Z06_Spot_Leaf_01", kind = "spot", zone = "Z06", pos = { -38, 0, -12 }, spawns = { "W_LEAF" } },
+		{ id = "Z06_Spot_Branch_01", kind = "spot", zone = "Z06", pos = { 40, 0, -30 }, spawns = { "W_BRANCH" } },
+		{ id = "Z06_Spot_Pebble_01", kind = "spot", zone = "Z06", pos = { 42, 0, 30 }, spawns = { "W_STONE_LIGHT" } },
+		-- Qısa yol: qərb divarındakı keçid masa altına (və Z01/Z05 rampasına) açılır
+		{
+			id = "Z06_Branch_01",
+			kind = "work",
+			def = "W_BRANCH",
+			zone = "Z06",
+			pos = { -46, 0, 24 },
+			rot = 90,
+			blocksPath = true,
+			extra = { barrier = { 2, 6, 8 } },
+		},
+		{
+			id = "GATE_Z06W",
+			kind = "gate",
+			zone = "Z06",
+			pos = { -50, 0, 24 },
+			extra = { unlockZone = "Z06", size = { 2, 10, 8 } },
+		},
 	},
 	areas = {
 		{ id = "A_Z06", zone = "Z06", origin = { -46, 0, -36 }, size = { 92, 72 } },
 	},
 	paths = {
 		{ x0 = -3, z0 = 34, x1 = 3, z1 = 40 },
+		{ x0 = -50, z0 = 20, x1 = -40, z1 = 28 },
 	},
 	ground = {
 		{ pos = { 0, -1, 0 }, size = { 100, 2, 80 } },
@@ -130,7 +153,9 @@ local layout: Types.ZoneLayout = {
 	walls = {
 		{ pos = { 0, 6, -40 }, size = { 100, 12, 2 } },
 		{ pos = { 50, 6, 0 }, size = { 2, 12, 80 } },
-		{ pos = { -50, 6, 0 }, size = { 2, 12, 80 } },
+		-- Qərb divarı: Z 20..28 keçidi (GATE_Z06W + qısa yol budağı)
+		{ pos = { -50, 6, -10 }, size = { 2, 12, 60 } },
+		{ pos = { -50, 6, 34 }, size = { 2, 12, 12 } },
 	},
 	props = {
 		{

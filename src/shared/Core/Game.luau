@@ -1983,6 +1983,12 @@ local SETTINGS: { [string]: (any) -> boolean } = {
 	rainFx = function(v)
 		return type(v) == "boolean"
 	end,
+	skin = function(v)
+		return isFinite(v) and v % 1 == 0 and v >= 1 and v <= 6
+	end,
+	outfit = function(v)
+		return isFinite(v) and v % 1 == 0 and v >= 1 and v <= 4
+	end,
 }
 
 Actions.SetPreference = {
@@ -1993,6 +1999,7 @@ Actions.SetPreference = {
 			return fail("msg.badRequest")
 		end
 		self.profile.settings[key] = payload.value
+		self:emit("pref", { key = key, value = payload.value })
 		self.dirty = true
 		return ok()
 	end,

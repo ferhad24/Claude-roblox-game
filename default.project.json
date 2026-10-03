@@ -20,7 +20,8 @@
         "CharacterUseJumpPower": false,
         "CharacterJumpHeight": 3.2,
         "DevCameraOcclusionMode": "Zoom",
-        "AutoJumpEnabled": false
+        "AutoJumpEnabled": false,
+        "LoadCharacterAppearance": false
       },
       "StarterPlayerScripts": {
         "Client": {

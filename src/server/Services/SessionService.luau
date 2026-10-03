@@ -16,6 +16,7 @@ local PlayerDataService = require(script.Parent.PlayerDataService)
 local WorldService = require(script.Parent.WorldService)
 local Telemetry = require(script.Parent.Telemetry)
 local ProfileStore = require(script.Parent.Parent.ProfileStore)
+local CharacterLook = require(script.Parent.CharacterLook)
 
 local SessionService = {}
 
@@ -132,6 +133,13 @@ local function doSave(a: Active, release: boolean)
 	end
 end
 
+local function applyLook(a: Active)
+	local char = a.player.Character
+	if char then
+		CharacterLook.apply(char, a.game.profile.settings, a.game:power())
+	end
+end
+
 local function processEvents(a: Active)
 	local events = a.game:drainEvents()
 	local p = a.game.profile
@@ -157,6 +165,10 @@ local function processEvents(a: Active)
 		elseif t == "work" and e.done then
 			local obj = Layout.byId[e.id]
 			Telemetry.log(a.player, "work_completed", obj and (obj.def or obj.id) or e.id, p.playSeconds)
+		elseif t == "pref" and (e.key == "skin" or e.key == "outfit") then
+			applyLook(a)
+		elseif t == "level" and e.n >= Constants.POWER_MAX then
+			applyLook(a)
 		elseif t == "final" and not e.replay then
 			Telemetry.log(a.player, "final_completed", nil, p.playSeconds)
 			requestSave(a, 1)
@@ -240,8 +252,9 @@ local function startSession(player: Player)
 	}
 	active = a
 	WorldService.applyAll(session.profile)
-	spawnCharacter(player)
-	player.CharacterAdded:Connect(function()
+	player.CharacterAdded:Connect(function(char: Model)
+		char:WaitForChild("Head", 10)
+		applyLook(a)
 		task.defer(function()
 			local target = a.lastSafe
 			if target then
@@ -249,6 +262,7 @@ local function startSession(player: Player)
 			end
 		end)
 	end)
+	spawnCharacter(player)
 	sessionRemote:FireClient(player, {
 		status = "ready",
 		testMode = PlayerDataService.isTestMode(),

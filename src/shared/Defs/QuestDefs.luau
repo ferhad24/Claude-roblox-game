@@ -461,6 +461,14 @@ local sideTasks: { SideTaskDef } = {
 		reward = { coins = 70, xp = 120 },
 	},
 	{
+		id = "S6_SHORTCUT",
+		zone = "Z06",
+		textKey = "side.S6_SHORTCUT",
+		objective = { type = "restore", ids = { "Z06_Branch_01" } },
+		reward = { coins = 80, xp = 150 },
+		marker = "Z06_Branch_01",
+	},
+	{
 		id = "S6_MEMORY",
 		zone = "Z06",
 		textKey = "side.S6_MEMORY",
@@ -472,13 +480,6 @@ local sideTasks: { SideTaskDef } = {
 		zone = "Z06",
 		textKey = "side.S6_STAR",
 		objective = { type = "harvested", species = "PL_STAR", count = 1 },
-		reward = { coins = 80, xp = 150 },
-	},
-	{
-		id = "S6_ARCH",
-		zone = "Z06",
-		textKey = "side.S6_ARCH",
-		objective = { type = "placed", build = "B_FLOWERARCH", count = 1 },
 		reward = { coins = 80, xp = 150 },
 	},
 }

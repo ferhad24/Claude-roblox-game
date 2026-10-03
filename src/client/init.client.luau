@@ -165,6 +165,8 @@ Net.Event:Connect(function(e: { [string]: any })
 		Hud.setWorkProgress(e.progress, e.active == true)
 	elseif t == "water" then
 		Hud.showWater(4)
+	elseif t == "crafted" then
+		Hud.showCrafted(e.id, e.n)
 	end
 end)
 Net.Result:Connect(function(_action: string, result: { [string]: any })

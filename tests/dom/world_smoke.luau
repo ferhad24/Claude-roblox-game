@@ -219,4 +219,22 @@ for _, ch in requireModule(Shared.Defs.QuestDefs).chapters do
 end
 WorldService.applyAll(p)
 WorldService.handleEvent({ type = "chapter", n = 6 }, p)
+-- Personaj görünüşü (R15 və R6 hissə adları)
+local CharacterLook = requireModule(ServerScriptService.Server.Services.CharacterLook)
+for _, names in { { "Head", "LeftHand", "RightHand", "UpperTorso" }, { "Head", "Left Arm", "Right Arm", "Torso" } } do
+	local char = roblox.Instance.new("Model")
+	for _, n in names do
+		local part = roblox.Instance.new("Part")
+		part.Name = n
+		part.Size = roblox.Vector3.new(1, 1, 1)
+		part.CFrame = roblox.CFrame.new(0, 5, 0)
+		part.Parent = char
+	end
+	char.Parent = workspace
+	CharacterLook.apply(char, { skin = 3, outfit = 2 }, 20)
+	CharacterLook.apply(char, { skin = 1, outfit = 4 }, 5)
+	assert(char:FindFirstChild("TG_LeafHat"), "papaq yaradılmadı")
+	assert(char:FindFirstChildOfClass("BodyColors"), "BodyColors yoxdur")
+end
+print("Personaj görünüşü: xətasız")
 print("Vəziyyət tətbiqi və hadisələr: xətasız")

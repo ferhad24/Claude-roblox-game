@@ -594,12 +594,28 @@ function WorldService.applyPlant(slot: string, p: Profile)
 	if existing and existing:GetAttribute("TG_Stage") == stage then
 		return
 	end
+	-- Mərhələ dəyişməsi yumşaq 0,5 s keçidlə (bölmə 13)
 	if existing then
-		existing:Destroy()
+		local old = existing
+		for _, d in old:GetDescendants() do
+			if d:IsA("BasePart") then
+				tween(d, 0.5, { Transparency = 1 })
+			end
+		end
+		task.delay(0.5, function()
+			old:Destroy()
+		end)
 	end
 	local m = Placeholders.plant(def, stage, at :: CFrame)
 	m.Name = "Plant_" .. slot
 	m:SetAttribute("TG_Stage", stage)
+	for _, d in m:GetDescendants() do
+		if d:IsA("BasePart") and d.Name ~= "Base" then
+			local target = d.Transparency
+			d.Transparency = 1
+			tween(d, 0.5, { Transparency = target })
+		end
+	end
 	m.Parent = root
 	plantModels[slot] = m
 end

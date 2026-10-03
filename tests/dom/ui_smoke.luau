@@ -521,6 +521,8 @@ end
 
 -- Final kəsimi və hadisələr
 signalFor(remotes.Event, "OnClientEvent"):Fire({ type = "toast", key = "msg.saved" })
+signalFor(remotes.Event, "OnClientEvent"):Fire({ type = "crafted", id = "MAT_ROPE", n = 1 })
+signalFor(remotes.Event, "OnClientEvent"):Fire({ type = "crafted", id = "B_WHEEL", n = 1 })
 signalFor(remotes.Event, "OnClientEvent"):Fire({ type = "work", id = "Z01_Leaf_01", progress = 0.5, active = true })
 signalFor(remotes.Event, "OnClientEvent"):Fire({ type = "final", replay = true })
 

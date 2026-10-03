@@ -86,13 +86,45 @@ function Hud.update(dt: number)
 	local _ = dt
 end
 
+-- Hazırlanmış əşyanın 2 saniyəlik təqdimatı (bölmə 11); toxunma/klik ilə keçilir
+local craftCard: TextButton? = nil
+function Hud.showCrafted(id: string, n: number)
+	if craftCard then
+		craftCard:Destroy()
+	end
+	local card = Kit.button(frame, "ui.craftedCard", function()
+		if craftCard then
+			craftCard:Destroy()
+			craftCard = nil
+		end
+	end, {
+		params = { name = Catalog.nameKey(id), n = n },
+		style = "accent",
+		size = UDim2.fromOffset(320, 64),
+		pos = UDim2.fromScale(0.5, 0.38),
+		anchor = Vector2.new(0.5, 0.5),
+		textSize = 20,
+	})
+	card.ZIndex = 18
+	craftCard = card
+	task.delay(2, function()
+		if craftCard == card then
+			card:Destroy()
+			craftCard = nil
+		end
+	end)
+end
+
 function Hud.showWater(seconds: number)
 	showWaterUntil = os.clock() + seconds
 end
 
 local function render(s: { [string]: any })
 	coinsLabel.Text = fmtCoins(s.coins)
-	powerLabel.Text = Lang.t("ui.power") .. " " .. tostring(s.power)
+	powerLabel.Text = Lang.t("ui.power")
+		.. " "
+		.. tostring(s.power)
+		.. (if s.power >= Constants.POWER_MAX then " · " .. Lang.t("ui.title.master") else "")
 	local need = s.xpNeed
 	xpFill.Size = UDim2.fromScale(if need > 0 then math.clamp(s.xpInLevel / need, 0, 1) else 1, 1)
 

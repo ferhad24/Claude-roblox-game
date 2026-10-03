@@ -23,6 +23,8 @@ local function defaultSettings(): { [string]: any }
 		textSize = 1,
 		markers = true,
 		rainFx = true,
+		skin = 2,
+		outfit = 1,
 	}
 end
 
